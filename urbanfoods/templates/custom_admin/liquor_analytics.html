@@ -1,7 +1,7 @@
 {% extends 'custom_admin/base.html' %}
 {% load static %}
 
-{% block title %}Liquor Analytics - UrbanFoods Admin{% endblock %}
+{% block title %}Liquor Analytics - Tipsy Theoryy Admin{% endblock %}
 
 {% block page_title %}🍷 Liquor Analytics & Reports{% endblock %}
 
@@ -384,7 +384,7 @@ function exportReport() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `urbanfoods-liquor-analytics-${days}days.csv`;
+    a.download = `Tipsy Theoryy-liquor-analytics-${days}days.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 

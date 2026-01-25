@@ -1,17 +1,35 @@
 {% extends 'custom_admin/base.html' %}
 {% load static %}
 
-{% block title %}Liquor Dashboard - UrbanFoods Admin{% endblock %}
+{% block title %}Liquor Dashboard - Tipsy Theoryy Admin{% endblock %}
 
 {% block page_title %}Liquor Store Dashboard{% endblock %}
 
 {% block breadcrumb_active %}Liquor Dashboard{% endblock %}
 
 {% block content %}
+<!-- Welcome Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Welcome back, {{ request.user.get_full_name|default:request.user.username }}!</h2>
+                    <p class="text-muted mb-0">Here's what's happening with your liquor store today</p>
+                </div>
+                <div class="text-end">
+                    <div class="current-time" id="currentTime"></div>
+                    <small class="text-muted">{{ "now"|date:"l, F j, Y" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4 mb-5">
     <!-- Today's Orders -->
     <div class="col-xl-3 col-md-6">
-        <div class="stats-card p-4">
+        <div class="stats-card p-4 animate-card" style="animation-delay: 0.1s">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="value">{{ today_orders_count }}</div>
@@ -26,7 +44,7 @@
 
     <!-- Today's Revenue -->
     <div class="col-xl-3 col-md-6">
-        <div class="stats-card p-4">
+        <div class="stats-card p-4 animate-card" style="animation-delay: 0.2s">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="value">KES {{ today_revenue|floatformat:0 }}</div>
@@ -41,7 +59,7 @@
 
     <!-- Pending Orders -->
     <div class="col-xl-3 col-md-6">
-        <div class="stats-card p-4">
+        <div class="stats-card p-4 animate-card" style="animation-delay: 0.3s">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="value">{{ pending_orders }}</div>
@@ -56,7 +74,7 @@
 
     <!-- Out for Delivery -->
     <div class="col-xl-3 col-md-6">
-        <div class="stats-card p-4">
+        <div class="stats-card p-4 animate-card" style="animation-delay: 0.4s">
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <div class="value">{{ out_for_delivery }}</div>
@@ -257,7 +275,22 @@ let revenueChart = null;
 document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
     loadRecentOrders();
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000); // Update time every second
 });
+
+function updateCurrentTime() {
+    const timeElement = document.getElementById('currentTime');
+    if (timeElement) {
+        const now = new Date();
+        timeElement.textContent = now.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    }
+}
 
 function initializeCharts() {
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');

@@ -736,12 +736,12 @@
 
                     {% if user.is_authenticated %}
                         <a href="/orders/" class="hidden sm:block text-gray-700 hover:text-orange-600 text-sm">My Orders</a>
-                        <button onclick="toggleCart()" class="relative">
+                        <!-- <button onclick="toggleCart()" class="relative">
                             <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-700 hover:text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                             </svg>
                             <span id="cartBadge" class="absolute -top-2 -right-2 bg-orange-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-                        </button>
+                        </button> -->
                         <a href="/profile/" class="text-gray-700 hover:text-orange-600">
                             <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -808,7 +808,7 @@
                     </div>
 
                     <h1 class="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
-                        <span class="text-yellow-400">Double T</span><br>
+                        <span class="text-yellow-400 brand-logo">Tipsy Theoryy</span><br>
                         <span class="text-white">Liquor Store</span>
                     </h1>
 
@@ -818,7 +818,7 @@
                     </p>
 
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                        <button onclick="document.getElementById('featuredCarousel').scrollIntoView({behavior: 'smooth'})"
+                        <button onclick="document.getElementById('allItemsHeading').scrollIntoView({behavior: 'smooth'})"
                                 class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-red-900 px-8 py-4 rounded-lg font-bold text-lg hover:from-yellow-400 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                             <i class="fas fa-glass-martini mr-2"></i>
                             Explore Collection
@@ -855,7 +855,7 @@
                             <img src="{% static 'images/hero-bottle.png' %}"
                                  alt="Premium Liquor Bottle"
                                  class="w-full h-full object-contain drop-shadow-2xl animate-float-slow"
-                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDIwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjODAwMDIwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8dGV4dCB4PSIxMDAiIHk9IjE1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjZmZkNzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zNWVtIj5MaXF1b3I8L3RleHQ+Cjwvc3ZnPgo='">
+                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDIwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjODAwMDIwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8dGV4dCB4PSIxMDAiIHk9IjE1MCIgZm9TT1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjZmZkNzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zNWVtIj5MaXF1b3I8L3RleHQ+Cjwvc3ZnPgo='">
 
                             <!-- Glow Effect -->
                             <div class="absolute inset-0 bg-gradient-to-t from-yellow-400/20 to-transparent rounded-lg blur-xl animate-pulse"></div>
@@ -949,7 +949,7 @@
                                     Add to Cart
                                 </button>
                             </div>
-                            <p class="text-gray-500 text-xs mt-2">⏱️ {{ item.prep_time }} mins</p>
+                            <p class="text-gray-500 text-xs mt-2">⏱ {{ item.prep_time }} mins</p>
                         </div>
                     </div>
                     {% endfor %}
@@ -1021,8 +1021,8 @@
                             {% endif %}
                         </div>
                         <div class="flex items-center justify-between mt-2">
-                            <span class="text-gray-500 text-xs">⏱️ {{ item.prep_time }} mins</span>
-                            <span class="text-gray-500 text-xs">🔥 {{ item.times_ordered }} orders</span>
+                            <span class="text-gray-500 text-xs">⏱ {{ item.prep_time }} mins</span>
+                            <span class="text-gray-500 text-xs"> {{ item.times_ordered }} orders</span>
                         </div>
                     </div>
                 </div>
@@ -1314,7 +1314,7 @@
     <div id="pwaInstallPopup" class="pwa-install-popup hidden fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-50 max-w-xs animate-fade-in">
         <div class="flex items-center gap-3">
             <div class="flex-shrink-0">
-                <img src="{% static 'images/favicon.png' %}" alt="UDC" class="w-10 h-10 rounded-lg">
+                <img src="{% static 'images/favicon.png' %}" alt="TT" class="w-10 h-10 rounded-lg">
             </div>
             <div class="flex-1">
                 <h3 class="font-semibold text-gray-900 text-sm install-banner-pop">Install Tipsy Theoryy</h3>
@@ -1339,7 +1339,7 @@
     <div id="miniInstallBar" class="mini-install-bar hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 z-50 shadow-lg">
         <div class="flex items-center justify-between max-w-7xl mx-auto">
             <div class="flex items-center gap-3">
-                <img src="{% static 'images/favicon.png' %}" alt="UDC" class="w-6 h-6 rounded">
+                <img src="{% static 'images/favicon.png' %}" alt="TT" class="w-6 h-6 rounded">
                 <span class="text-sm font-medium">Install Tipsy Theoryy for a better experience</span>
             </div>
             <div class="flex items-center gap-2">
@@ -1357,7 +1357,7 @@
         id="ios-install-banner"
         class="hidden fixed bottom-0 inset-x-0 bg-gray-900 text-white p-4 text-center text-sm z-50"
         >
-        Install <b>UrbanFoods</b>:  
+        Install <b>Tipsy Theoryy</b>:  
         Tap <b>Share</b> → <b>Add to Home Screen</b>
     </div>
     {% endif %}
@@ -1494,6 +1494,10 @@
                 if (data.success) {
                     showToast(data.message);
                     document.getElementById('cartBadge').textContent = data.cart_count;
+                    const floatingCartBadge = document.getElementById('floatingCartBadge');
+                    if (floatingCartBadge) {
+                        floatingCartBadge.textContent = data.cart_count;
+                    }
                     // Reload cart if open
                     if (cartOpen) {
                         loadCart();

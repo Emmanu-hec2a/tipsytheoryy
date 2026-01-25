@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - UrbanFoods</title>
+    <title>Login - Tipsy Theoryy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -114,9 +114,81 @@
         .shape:nth-child(2) { top: 20%; right: 15%; animation: float 5s ease-in-out infinite 1s; }
         .shape:nth-child(3) { bottom: 20%; left: 20%; animation: float 6s ease-in-out infinite 2s; }
         .shape:nth-child(4) { bottom: 10%; right: 10%; animation: float 4.5s ease-in-out infinite 0.5s; }
+
+        /* Glassmorphism Styles */
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 24px;
+        }
+
+        [data-bs-theme="dark"] .glassmorphism {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Luxury Modal */
+        .luxury-modal {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px 0 rgba(31, 38, 135, 0.5);
+            border-radius: 24px;
+        }
+
+        [data-bs-theme="dark"] .luxury-modal {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Loading Modal */
+        .loading-modal {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 16px;
+        }
+
+        [data-bs-theme="dark"] .loading-modal {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Logo styling - Liquor style */
+        .brand-logo {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #722f37, #DAA520);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-style: italic;
+            transform: skewX(-5deg);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin: 0;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        [data-bs-theme="dark"] .brand-logo {
+            background: linear-gradient(45deg, #a0454a, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.1);
+        }
     </style>
 </head>
-<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style="background-image: url({% static 'images/bg-login.jpeg' %});">
     <!-- Floating Elements -->
     <div class="absolute inset-0 overflow-hidden">
         <div class="absolute top-10 left-10 w-20 h-20 bg-yellow-400 rounded-full opacity-20 animate-float"></div>
@@ -210,6 +282,23 @@
         </div>
     </div>
 
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="loading-modal max-w-sm w-full p-6 fade-in">
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="fas fa-wine-bottle text-yellow-400 text-4xl animate-pulse"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2 text-white">Signing You In</h2>
+                <p class="text-gray-200 mb-4">Please wait while we authenticate your account...</p>
+                <div class="flex items-center justify-center space-x-2">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-400"></div>
+                    <span class="text-sm text-gray-300">Authenticating...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Form validation and submission
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -218,9 +307,8 @@
             const loginBtn = document.getElementById('loginBtn');
             const btnText = loginBtn.querySelector('.btn-text');
 
-            // Show loading state
-            loginBtn.classList.add('btn-loading');
-            btnText.textContent = 'Signing in...';
+            // Show loading modal
+            document.getElementById('loadingModal').classList.remove('hidden');
 
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
@@ -229,7 +317,7 @@
             // Basic validation
             if (!username || !password) {
                 showError('Please fill in all fields');
-                resetButton(loginBtn, btnText);
+                hideLoadingModal();
                 return;
             }
 
@@ -253,11 +341,11 @@
                     }, 1000);
                 } else {
                     showError(data.message);
-                    resetButton(loginBtn, btnText);
+                    hideLoadingModal();
                 }
             } catch (error) {
                 showError('Connection error. Please try again.');
-                resetButton(loginBtn, btnText);
+                hideLoadingModal();
             }
         });
 
@@ -316,6 +404,10 @@
         function resetButton(button, textElement) {
             button.classList.remove('btn-loading');
             textElement.textContent = 'Sign In';
+        }
+
+        function hideLoadingModal() {
+            document.getElementById('loadingModal').classList.add('hidden');
         }
 
         function getCookie(name) {

@@ -1,7 +1,7 @@
 {% extends 'custom_admin/base.html' %}
 {% load static %}
 
-{% block title %}Customer Management - UrbanFoods Admin{% endblock %}
+{% block title %}Customer Management - Tipsy Theoryy Admin{% endblock %}
 
 {% block page_title %}Customer Management{% endblock %}
 
@@ -444,7 +444,7 @@ function exportCustomers() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'urbanfoods-customers.csv';
+    a.download = 'Tipsy Theoryy-customers.csv';
     a.click();
     window.URL.revokeObjectURL(url);
 

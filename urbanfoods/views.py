@@ -311,7 +311,7 @@ def place_order(request):
     total = subtotal + delivery_fee
 
     # Generate order number
-    order_number = f"UDC{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
+    order_number = f"TT{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
 
     # Manual payment logic
     if payment_method == 'manual':

@@ -5,7 +5,7 @@
     {% block extrastyle %}{% endblock %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}UrbanFoods Admin Panel{% endblock %}</title>
+    <title>{% block title %}Tipsy Theoryy Admin Panel{% endblock %}</title>
 
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
@@ -173,6 +173,72 @@
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        .stats-card .trend {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .welcome-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float-bg 6s ease-in-out infinite;
+        }
+
+        .welcome-header h2 {
+            font-weight: 700;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .welcome-header p {
+            margin-bottom: 0;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+
+        .current-time {
+            font-size: 1.5rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+
+        .animate-card {
+            animation: slideInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float-bg {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) rotate(180deg); }
         }
 
         .breadcrumb-custom {
@@ -649,21 +715,20 @@
             </div>
 
             <ul class="nav flex-column flex-grow-1">
-                {% if 'liquor' in request.path %}
-                <!-- Liquor Admin Navigation -->
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_liquor' %}active{% endif %}"
-                       href="{% url 'admin_liquor' %}">
-                        <i class="fas fa-wine-bottle me-2"></i>
-                        Liquor Menu
-                    </a>
-                </li>
-
+                <!-- Liquor Admin Navigation (Default) -->
                 <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.url_name == 'liquor_dashboard' %}active{% endif %}"
                        href="{% url 'liquor_dashboard' %}">
                         <i class="fas fa-tachometer-alt me-2"></i>
                         Dashboard
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_liquor' %}active{% endif %}"
+                       href="{% url 'admin_liquor' %}">
+                        <i class="fas fa-wine-bottle me-2"></i>
+                        Liquor Menu
                     </a>
                 </li>
 
@@ -685,69 +750,34 @@
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link" href="{% url 'admin_dashboard' %}">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Back to Main
-                    </a>
-                </li>
-                {% else %}
-                <!-- Main Admin Navigation -->
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
-                       href="{% url 'admin_dashboard' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>
-                        Dashboard
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_orders' %}active{% endif %}"
-                       href="{% url 'admin_orders' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Orders">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        Orders
-                        <span id="pendingOrdersBadge" class="badge bg-danger ms-auto notification-badge" style="display: none;">0</span>
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_menu' %}active{% endif %}"
-                       href="{% url 'admin_menu' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Food Menu">
-                        <i class="fas fa-utensils me-2"></i>
-                        Food Menu
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_grocery' %}active{% endif %}"
-                       href="{% url 'admin_grocery' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Grocery Store">
-                        <i class="fas fa-shopping-cart me-2"></i>
-                        Shop & Grocery Store
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_analytics' %}active{% endif %}"
-                       href="{% url 'admin_analytics' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Analytics">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        Analytics
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
                     <a class="nav-link {% if request.resolver_match.url_name == 'admin_customers' %}active{% endif %}"
-                       href="{% url 'admin_customers' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Customers">
+                       href="{% url 'admin_customers' %}">
                         <i class="fas fa-users me-2"></i>
                         Customers
                     </a>
                 </li>
 
-                <li class="nav-item mb-2">
-                    <a class="nav-link" href="{% url 'admin_liquor' %}" data-bs-toggle="tooltip" data-bs-placement="right" title="Liquor Store">
-                        <i class="fas fa-wine-bottle me-2"></i>
-                        Liquor Store
+                <!-- Legacy Food/Grocery Links (Hidden by default) -->
+                <li class="nav-item mb-2" style="display: none;">
+                    <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                        <i class="fas fa-utensils me-2"></i>
+                        Food Dashboard
                     </a>
                 </li>
-                {% endif %}
+
+                <li class="nav-item mb-2" style="display: none;">
+                    <a class="nav-link" href="{% url 'admin_menu' %}">
+                        <i class="fas fa-utensils me-2"></i>
+                        Food Menu
+                    </a>
+                </li>
+
+                <li class="nav-item mb-2" style="display: none;">
+                    <a class="nav-link" href="{% url 'admin_grocery' %}">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Grocery Store
+                    </a>
+                </li>
 
                 <li class="nav-item mb-2">
                     <a class="nav-link" href="{% url 'homepage' %}">

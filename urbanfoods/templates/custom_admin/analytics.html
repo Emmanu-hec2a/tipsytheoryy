@@ -1,7 +1,7 @@
 {% extends 'custom_admin/base.html' %}
 {% load static %}
 
-{% block title %}Analytics - UrbanFoods Admin{% endblock %}
+{% block title %}Analytics - Tipsy Theoryy Admin{% endblock %}
 
 {% block page_title %}Analytics & Reports{% endblock %}
 
@@ -610,7 +610,7 @@ function exportReport() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `urbanfoods-analytics-${days}days.csv`;
+    a.download = `Tipsy Theoryy-analytics-${days}days.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 
