@@ -116,23 +116,22 @@
         .shape:nth-child(4) { bottom: 10%; right: 10%; animation: float 4.5s ease-in-out infinite 0.5s; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style="background-image: url('{% static 'images/bg-pattern.jpg' %}'); background-size: cover; background-repeat: no-repeat;">
-    <!-- Floating Shapes -->
-    <div class="floating-shapes">
-        <div class="shape text-white"><i class="fas fa-utensils"></i></div>
-        <div class="shape text-white"><i class="fas fa-pizza-slice"></i></div>
-        <div class="shape text-white"><i class="fas fa-hamburger"></i></div>
-        <div class="shape text-white"><i class="fas fa-coffee"></i></div>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <!-- Floating Elements -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute top-10 left-10 w-20 h-20 bg-yellow-400 rounded-full opacity-20 animate-float"></div>
+        <div class="absolute top-20 right-20 w-16 h-16 bg-yellow-300 rounded-full opacity-15 animate-float-delayed"></div>
+        <div class="absolute bottom-20 left-20 w-12 h-12 bg-yellow-500 rounded-full opacity-25 animate-float"></div>
     </div>
 
-    <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl w-full max-w-md p-8 relative z-10 fade-in-up">
+    <div class="luxury-modal rounded-3xl shadow-2xl w-full max-w-md p-8 relative z-10 fade-in-up">
         <!-- Logo -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4 pulse-animation">
-                <i class="fas fa-utensils text-2xl text-orange-600"></i>
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-800 to-red-900 rounded-full mb-4 pulse-animation">
+                <i class="fas fa-wine-bottle text-yellow-400 text-2xl"></i>
             </div>
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
-            <p class="text-gray-600">Sign in to your UrbanFoods account</p>
+            <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+            <p class="text-red-100">Sign in to your Tipsy Theoryy account</p>
         </div>
 
         <!-- Hidden form just to generate CSRF cookie -->

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UrbanDreamsCafe</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>window.CURRENT_STORE_TYPE = "{{ request.session.store_type|default:'food' }}";</script>
+    <script>window.CURRENT_STORE_TYPE = "liquor";</script>
 
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ff6600">
@@ -22,11 +22,11 @@
     <!-- Microsoft/Edge specific -->
     <meta name="msapplication-TileColor" content="#ea580c">
     <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
-    <meta name="application-name" content="Urban Dreams Cafe">
+    <meta name="application-name" content="Tipsy Theoryy">
 
     <!--Description-->
-    <meta name="description" content="Urban Dreams Cafe - Your go-to online food, liquor, and grocery delivery service in Nyeri/Karatina. Enjoy delicious meals, refreshing drinks, and everyday essentials delivered to your doorstep. Order now for a seamless shopping experience!">
-    <meta name="keywords" content="Urban Foods, Urban Dreams Cafe, Online Food Delivery Nyeri/Karatina, Liquor Delivery Nairobi, Grocery Delivery Nyeri/Karatina, Order Food Online, Nyeri/Karatina Food Delivery, Fresh Groceries Nairobi, Drink Delivery Nyeri/Karatina, Fast Food Delivery, Urban Foods Nairobi">
+    <meta name="description" content="Tipsy Theoryy - Your go-to online food, liquor, and grocery delivery service in Nyeri/Karatina. Enjoy delicious meals, refreshing drinks, and everyday essentials delivered to your doorstep. Order now for a seamless shopping experience!">
+    <meta name="keywords" content="Urban Foods, Tipsy Theoryy, Online Food Delivery Nyeri/Karatina, Liquor Delivery Nairobi, Grocery Delivery Nyeri/Karatina, Order Food Online, Nyeri/Karatina Food Delivery, Fresh Groceries Nairobi, Drink Delivery Nyeri/Karatina, Fast Food Delivery, Urban Foods Nairobi">
 
     <!--robot-->
     <meta name="robots" content="index, follow">
@@ -324,21 +324,97 @@
             line-height: 1.3;
         }
 
-        /* Logo styling - KFC style */
+        /* Logo styling - Liquor style */
         .brand-logo {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Playfair Display', serif;
             font-weight: 900;
             font-size: 2.5rem;
-            color: #ea580c;
+            background: linear-gradient(45deg, #722f37, #DAA520);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             font-style: italic;
             transform: skewX(-5deg);
             letter-spacing: 0.05em;
             text-transform: uppercase;
             margin: 0;
             line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 640px) {
+            .brand-logo {
+                font-size: 1.5rem;
+                letter-spacing: 0.02em;
+                line-height: 1.1;
+            }
+        }
+        @media (max-width: 480px) {
+            .brand-logo {
+                font-size: 1.25rem;
+                transform: skewX(-3deg);
+            }
         }
         [data-bs-theme="dark"] .brand-logo {
-            color: #DC143C !important;
+            background: linear-gradient(45deg, #a0454a, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.1);
+        }
+
+        /* Animated Category Slider */
+        .category-slider {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 0.5rem 0;
+        }
+        .category-slider::-webkit-scrollbar {
+            display: none;
+        }
+        .category-btn {
+            flex-shrink: 0;
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .category-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .category-btn:hover::before {
+            left: 100%;
+        }
+        .category-btn.active {
+            background: linear-gradient(135deg, #ea580c, #dc2626);
+            color: white;
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+            transform: translateY(-2px);
+        }
+        .category-btn:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #374151;
+        }
+        [data-bs-theme="dark"] .category-btn:not(.active) {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
         }
 
         /* Delivery Banner Styles */
@@ -420,6 +496,145 @@
             background: linear-gradient(90deg, #dc2626, #b91c1c);
         }
 
+        /* Hero Section Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes float-delayed {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-5px) rotate(1deg); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-float-delayed { animation: float-delayed 3s ease-in-out infinite 1s; }
+        .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+
+        /* iOS 16-Style Glassmorphism */
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 16px;
+        }
+
+        [data-bs-theme="dark"] .glassmorphism {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glassmorphism-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glassmorphism-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        [data-bs-theme="dark"] .glassmorphism-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        [data-bs-theme="dark"] .glassmorphism-card:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Gradient Background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        [data-bs-theme="dark"] .gradient-bg {
+            background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+        }
+
+        /* Glassy Header */
+        .glassy-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
+        }
+
+        [data-bs-theme="dark"] .glassy-header {
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Luxurious Checkout Modal */
+        .luxury-modal {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px 0 rgba(31, 38, 135, 0.5);
+            border-radius: 24px;
+        }
+
+        [data-bs-theme="dark"] .luxury-modal {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Floating Glass Cart */
+        .floating-cart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            animation: float-cart 3s ease-in-out infinite;
+        }
+
+        .floating-cart:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        [data-bs-theme="dark"] .floating-cart {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        [data-bs-theme="dark"] .floating-cart:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes float-cart {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
         /* Store Loading Spinner */
         .store-loading-overlay {
             position: fixed;
@@ -469,14 +684,14 @@
         }
     </style>
 </head>
-<body class="bg-gray-50" data-store-type="{{ store_type }}">
+<body class="gradient-bg" data-store-type="{{ store_type }}">
     <!-- Navigation -->
-    <nav class="bg-white shadow-md sticky top-0 z-40">
+    <nav class="glassy-header sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex flex-col items-start">
                     <a href="/" style="text-decoration: none;">
-                        <h1 class="brand-logo">UDC</h1>
+                        <h1 class="brand-logo">TIPSY THEORYY</h1>
                     </a>
                 </div>
                 
@@ -492,36 +707,15 @@
                 
                 <!-- User Actions -->
                 <div class="flex items-center gap-2">
-                    <!-- Store Dropdown -->
-                    <div class="relative">
-                        <button onclick="toggleStoreDropdown()" class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-orange-600 rounded-lg hover:bg-gray-100 switch-store-btn">
-                            <i class="fas fa-store"></i>
-                            <span class="hidden sm:inline">Store</span>
-                            <i id="storeDropdownIcon" class="fas fa-chevron-down text-xs"></i>
-                        </button>
-                        <div id="storeDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                            <div class="py-2">
-                                <button onclick="switchStore('food')" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-utensils mr-3" style="color:#DC143C"></i>
-                                    <span class="flex-1 text-left">Food Store</span>
-                                    {% if store_type == 'food' %}<i class="fas fa-check text-orange-600"></i>{% endif %}
-                                </button>
-                                <button onclick="switchStore('liquor')" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-wine-bottle mr-3" style="color:cadetblue"></i>
-                                    <span class="flex-1 text-left">Liquor Store</span>
-                                    {% if store_type == 'liquor' %}<i class="fas fa-check text-orange-600"></i>{% endif %}
-                                </button>
-                                <button onclick="switchStore('grocery')" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-shopping-cart mr-3" style="color:green"></i>
-                                    <span class="flex-1 text-left">Shop & Grocery Store</span>
-                                    {% if store_type == 'grocery' %}<i class="fas fa-check text-orange-600"></i>{% endif %}
-                                </button>
-                            </div>
-                        </div>
+                    <!-- Liquor Store Badge -->
+                    <div class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-800 to-red-900 text-white rounded-lg shadow-lg">
+                        <i class="fas fa-wine-bottle text-yellow-400"></i>
+                        <span class="hidden sm:inline font-semibold">Liquor Store</span>
+                        <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">18+</span>
                     </div>
                     
                     <!-- Theme Toggle -->
-                    <div class="relative">
+                    <!-- <div class="relative">
                         <button onclick="toggleThemeMenu()" class="text-gray-700 hover:text-orange-600 p-2 rounded-lg hover:bg-gray-100">
                             <i id="themeIcon" class="fas fa-sun text-lg"></i>
                         </button>
@@ -538,7 +732,7 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                     {% if user.is_authenticated %}
                         <a href="/orders/" class="hidden sm:block text-gray-700 hover:text-orange-600 text-sm">My Orders</a>
@@ -589,6 +783,109 @@
     </div>
     {% endif %}
 
+    <!-- Hero Bottle Artwork Section -->
+    <div class="relative bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, gold 2px, transparent 2px), radial-gradient(circle at 75% 75%, gold 2px, transparent 2px); background-size: 50px 50px;"></div>
+        </div>
+
+        <!-- Floating Elements -->
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute top-10 left-10 w-20 h-20 bg-yellow-400 rounded-full opacity-20 animate-float"></div>
+            <div class="absolute top-20 right-20 w-16 h-16 bg-yellow-300 rounded-full opacity-15 animate-float-delayed"></div>
+            <div class="absolute bottom-20 left-20 w-12 h-12 bg-yellow-500 rounded-full opacity-25 animate-float"></div>
+        </div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Left Content -->
+                <div class="text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 bg-red-700 bg-opacity-50 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium mb-6">
+                        <i class="fas fa-wine-bottle text-yellow-400"></i>
+                        <span>Premium Liquor Collection</span>
+                        <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">18+</span>
+                    </div>
+
+                    <h1 class="text-4xl lg:text-6xl font-bold mb-6 leading-tight">
+                        <span class="text-yellow-400">Double T</span><br>
+                        <span class="text-white">Liquor Store</span>
+                    </h1>
+
+                    <p class="text-xl text-red-100 mb-8 max-w-lg">
+                        Discover our curated selection of premium spirits, wines, and craft beverages.
+                        Quality, authenticity, and exceptional taste in every bottle.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                        <button onclick="document.getElementById('featuredCarousel').scrollIntoView({behavior: 'smooth'})"
+                                class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-red-900 px-8 py-4 rounded-lg font-bold text-lg hover:from-yellow-400 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                            <i class="fas fa-glass-martini mr-2"></i>
+                            Explore Collection
+                        </button>
+                        <button onclick="document.getElementById('ageVerificationModal').classList.remove('hidden')"
+                                class="border-2 border-yellow-400 text-yellow-400 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-400 hover:text-red-900 transform hover:scale-105 transition-all duration-300">
+                            <i class="fas fa-id-card mr-2"></i>
+                            Verify Age
+                        </button>
+                    </div>
+
+                    <!-- Trust Indicators -->
+                    <div class="flex items-center justify-center lg:justify-start gap-6 mt-8 text-sm text-red-200">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-shield-alt text-gold-400"></i>
+                            <span>Age Verified</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-truck text-gold-400"></i>
+                            <span>Fast Delivery</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-award text-gold-400"></i>
+                            <span>Premium Quality</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Content - Bottle Artwork -->
+                <div class="relative flex justify-center lg:justify-end">
+                    <div class="relative">
+                        <!-- Main Bottle -->
+                        <div class="relative w-64 h-96 lg:w-80 lg:h-112">
+                            <img src="{% static 'images/hero-bottle.png' %}"
+                                 alt="Premium Liquor Bottle"
+                                 class="w-full h-full object-contain drop-shadow-2xl animate-float-slow"
+                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDIwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjODAwMDIwIiBmaWxsLW9wYWNpdHk9IjAuMSIvPgo8dGV4dCB4PSIxMDAiIHk9IjE1MCIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjZmZkNzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zNWVtIj5MaXF1b3I8L3RleHQ+Cjwvc3ZnPgo='">
+
+                            <!-- Glow Effect -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-yellow-400/20 to-transparent rounded-lg blur-xl animate-pulse"></div>
+                        </div>
+
+                        <!-- Floating Price Tag -->
+                        <div class="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-red-900 px-4 py-2 rounded-lg font-bold shadow-lg animate-bounce">
+                            <div class="text-sm">From</div>
+                            <div class="text-xl">KES 450</div>
+                        </div>
+
+                        <!-- Sparkle Effects -->
+                        <div class="absolute top-10 right-10 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
+                        <div class="absolute bottom-20 left-10 w-1.5 h-1.5 bg-yellow-300 rounded-full animate-ping animation-delay-1000"></div>
+                        <div class="absolute top-1/2 right-5 w-1 h-1 bg-yellow-500 rounded-full animate-ping animation-delay-2000"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Wave -->
+        <div class="absolute bottom-0 left-0 right-0">
+            <svg viewBox="0 0 1200 120" preserveAspectRatio="none" class="w-full h-12 fill-gray-50">
+                <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25"></path>
+                <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5"></path>
+                <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"></path>
+            </svg>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Categories -->
@@ -605,50 +902,71 @@
             </div>
         </div>
 
-        <!-- Featured Items -->
+        <!-- Premium Featured Drinks Carousel -->
         {% if featured_items %}
-        <div class="mb-12">
-            <h2 class="text-2xl font-bold mb-4">⭐ {% if store_type == 'liquor' %}Featured Drinks{% elif store_type == 'grocery' %}Featured Groceries{% else %}Featured Items{% endif %}</h2>
-            <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {% for item in featured_items %}
-                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-                    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
-                    <div class="p-4">
-                        <div class="flex items-start justify-between mb-1">
-                            <h3 class="font-bold text-lg">{{ item.name }}</h3>
+        <div class="mb-12" id="featuredCarousel">
+            <h2 class="text-2xl font-bold mb-6 text-center">⭐ Premium Featured Drinks</h2>
+            <div class="relative overflow-hidden">
+                <!-- Carousel Container -->
+                <div class="carousel-container flex gap-4 md:gap-6 overflow-x-auto scroll-smooth pb-4" id="carouselTrack">
+                    {% for item in featured_items %}
+                    <div class="carousel-item flex-shrink-0 w-64 md:w-72 glassmorphism-card rounded-xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl group">
+                        <div class="relative">
+                            <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500">
+                            <!-- Glow Effect -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-yellow-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <!-- Age Badge -->
                             {% if item.is_liquor %}
-                            <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">18+</span>
+                            <span class="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">18+</span>
                             {% endif %}
                         </div>
-                        {% if item.is_liquor and item.bottle_size %}
-                        <p class="text-gray-500 text-xs mb-1">Size: {{ item.bottle_size }}</p>
-                        {% endif %}
-                        <p class="text-gray-600 text-sm mt-1">{{ item.description|truncatewords:10 }}</p>
-                        <div class="rating-section flex items-center gap-1 mt-2 flex-wrap">
-                            <div class="stars-container flex items-center gap-0.5">
-                                {% for star_type in item.average_rating|star_rating %}
-                                    {% if star_type == 'full' %}
-                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                    {% elif star_type == 'half' %}
-                                        <i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>
-                                    {% else %}
-                                        <i class="far fa-star text-yellow-400 text-xs"></i>
-                                    {% endif %}
-                                {% endfor %}
+                        <div class="p-4">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-bold text-lg text-gray-800 dark:text-gray-100">{{ item.name }}</h3>
                             </div>
-                            <span class="rating-value text-xs text-gray-600 font-medium">{{ item.average_rating|floatformat:1 }}</span>
-                            <span class="review-count text-xs text-gray-500">({{ item.review_count }})</span>
+                            {% if item.is_liquor and item.bottle_size %}
+                            <p class="text-gray-500 text-xs mb-2">Size: {{ item.bottle_size }}</p>
+                            {% endif %}
+                            <p class="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{{ item.description|truncatewords:12 }}</p>
+                            <div class="rating-section flex items-center gap-1 mb-3">
+                                <div class="stars-container flex items-center gap-0.5">
+                                    {% for star_type in item.average_rating|star_rating %}
+                                        {% if star_type == 'full' %}
+                                            <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                        {% elif star_type == 'half' %}
+                                            <i class="fas fa-star-half-alt text-yellow-400 text-sm"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-yellow-400 text-sm"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-value text-sm text-gray-600 dark:text-gray-400 font-medium">{{ item.average_rating|floatformat:1 }}</span>
+                                <span class="review-count text-sm text-gray-500">({{ item.review_count }})</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-orange-600 font-bold text-xl">KES {{ item.price }}</span>
+                                <button onclick="addToCart({{ item.id }}, 1)" class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">
+                                    Add to Cart
+                                </button>
+                            </div>
+                            <p class="text-gray-500 text-xs mt-2">⏱️ {{ item.prep_time }} mins</p>
                         </div>
-                        <div class="flex items-center justify-between mt-4">
-                            <span class="text-orange-600 font-bold text-xl">KES {{ item.price }}</span>
-                            <button onclick="addToCart({{ item.id }}, 1)" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700">
-                                Add
-                            </button>
-                        </div>
-                        <p class="text-gray-500 text-xs mt-2">⏱️ {{ item.prep_time }} mins</p>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+
+                <!-- Navigation Arrows -->
+                <button class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 carousel-prev" id="carouselPrev">
+                    <i class="fas fa-chevron-left text-gray-700 dark:text-gray-300"></i>
+                </button>
+                <button class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 carousel-next" id="carouselNext">
+                    <i class="fas fa-chevron-right text-gray-700 dark:text-gray-300"></i>
+                </button>
+
+                <!-- Dots Indicator -->
+                <div class="flex justify-center gap-2 mt-4" id="carouselDots">
+                    <!-- Dots will be generated by JavaScript -->
+                </div>
             </div>
         </div>
         {% endif %}
@@ -659,7 +977,7 @@
             {% if food_items %}
             <div id="foodGrid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {% for item in food_items %}
-                <div class="food-item bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition" data-category="{{ item.category.id }}">
+                <div class="food-item glassmorphism-card overflow-hidden transition" data-category="{{ item.category.id }}">
                     <div class="relative">
                         <img src="{{ item.image.url }}" alt="{{ item.name }}" class="w-full h-48 object-cover">
                         {% if not item.is_available %}
@@ -766,7 +1084,7 @@
 
     <!-- Checkout Modal -->
     <div id="checkoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-md w-full p-6 fade-in">
+        <div class="luxury-modal max-w-md w-full p-6 fade-in">
             <h2 class="text-2xl font-bold mb-4">📍 Delivery Details</h2>
             <form id="checkoutForm" class="space-y-4">
                 <div>
@@ -999,7 +1317,7 @@
                 <img src="{% static 'images/favicon.png' %}" alt="UDC" class="w-10 h-10 rounded-lg">
             </div>
             <div class="flex-1">
-                <h3 class="font-semibold text-gray-900 text-sm install-banner-pop">Install Urban Dreams Cafe</h3>
+                <h3 class="font-semibold text-gray-900 text-sm install-banner-pop">Install Tipsy Theoryy</h3>
                 <p class="text-gray-600 text-xs mt-1">Order faster with the app!</p>
                 <div class="flex items-center gap-1 mt-1">
                     <i class="fas fa-star text-yellow-400 text-xs"></i>
@@ -1022,7 +1340,7 @@
         <div class="flex items-center justify-between max-w-7xl mx-auto">
             <div class="flex items-center gap-3">
                 <img src="{% static 'images/favicon.png' %}" alt="UDC" class="w-6 h-6 rounded">
-                <span class="text-sm font-medium">Install Urban Dreams Cafe for a better experience</span>
+                <span class="text-sm font-medium">Install Tipsy Theoryy for a better experience</span>
             </div>
             <div class="flex items-center gap-2">
                 <button id="miniInstallBtn" class="bg-white text-orange-600 px-3 py-1 rounded text-xs font-medium hover:bg-gray-100 transition-colors">
@@ -1121,8 +1439,10 @@
             const emptyCart = document.getElementById('emptyCart');
             const cartSummary = document.getElementById('cartSummary');
             const cartBadge = document.getElementById('cartBadge');
-            
+            const floatingCartBadge = document.getElementById('floatingCartBadge');
+
             cartBadge.textContent = cartData.cart_count || 0;
+            floatingCartBadge.textContent = cartData.cart_count || 0;
             
             if (cartData.items.length === 0) {
                 cartItems.innerHTML = '';
@@ -1748,7 +2068,129 @@
                     filterCategory(btn, categoryId);
                 });
             });
+
+            // Initialize carousel
+            initializeCarousel();
         });
+
+        // Carousel functionality
+        function initializeCarousel() {
+            const carouselTrack = document.getElementById('carouselTrack');
+            const carouselPrev = document.getElementById('carouselPrev');
+            const carouselNext = document.getElementById('carouselNext');
+            const carouselDots = document.getElementById('carouselDots');
+
+            if (!carouselTrack) return;
+
+            const items = carouselTrack.querySelectorAll('.carousel-item');
+            if (items.length === 0) return;
+
+            let currentIndex = 0;
+            const totalItems = items.length;
+            const itemsPerView = window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
+            const maxIndex = Math.max(0, totalItems - itemsPerView);
+
+            // Create dots
+            for (let i = 0; i <= maxIndex; i++) {
+                const dot = document.createElement('button');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-200 ${i === 0 ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'}`;
+                dot.addEventListener('click', () => goToSlide(i));
+                carouselDots.appendChild(dot);
+            }
+
+            const dots = carouselDots.querySelectorAll('button');
+
+            function updateCarousel() {
+                const translateX = -currentIndex * (100 / itemsPerView);
+                carouselTrack.style.transform = `translateX(${translateX}%)`;
+
+                // Update dots
+                dots.forEach((dot, index) => {
+                    dot.className = `w-2 h-2 rounded-full transition-all duration-200 ${index === currentIndex ? 'bg-orange-500' : 'bg-gray-300 dark:bg-gray-600'}`;
+                });
+
+                // Update button states
+                carouselPrev.style.opacity = currentIndex === 0 ? '0.5' : '1';
+                carouselNext.style.opacity = currentIndex === maxIndex ? '0.5' : '1';
+            }
+
+            function goToSlide(index) {
+                currentIndex = Math.max(0, Math.min(index, maxIndex));
+                updateCarousel();
+            }
+
+            function nextSlide() {
+                if (currentIndex < maxIndex) {
+                    currentIndex++;
+                    updateCarousel();
+                }
+            }
+
+            function prevSlide() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateCarousel();
+                }
+            }
+
+            // Event listeners
+            carouselPrev.addEventListener('click', prevSlide);
+            carouselNext.addEventListener('click', nextSlide);
+
+            // Touch/swipe support
+            let startX = 0;
+            let isDragging = false;
+
+            carouselTrack.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            });
+
+            carouselTrack.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const currentX = e.touches[0].clientX;
+                const diff = startX - currentX;
+
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0 && currentIndex < maxIndex) {
+                        nextSlide();
+                    } else if (diff < 0 && currentIndex > 0) {
+                        prevSlide();
+                    }
+                    isDragging = false;
+                }
+            });
+
+            carouselTrack.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            // Auto-play (optional)
+            let autoplayInterval = setInterval(() => {
+                if (currentIndex < maxIndex) {
+                    nextSlide();
+                } else {
+                    currentIndex = 0;
+                    updateCarousel();
+                }
+            }, 5000);
+
+            // Pause autoplay on hover
+            carouselTrack.addEventListener('mouseenter', () => clearInterval(autoplayInterval));
+            carouselTrack.addEventListener('mouseleave', () => {
+                autoplayInterval = setInterval(() => {
+                    if (currentIndex < maxIndex) {
+                        nextSlide();
+                    } else {
+                        currentIndex = 0;
+                        updateCarousel();
+                    }
+                }, 5000);
+            });
+
+            // Initial update
+            updateCarousel();
+        }
 
         // ==================== THEME MANAGEMENT ====================
 
@@ -2011,113 +2453,113 @@
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker
-            .register('/service-worker.js')
-            .then((registration) => {
-                console.log('Service Worker registered successfully:', registration.scope);
+            window.addEventListener('load', () => {
+                navigator.serviceWorker
+                    .register('/service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration.scope);
 
-                // Check for updates every hour
-                setInterval(() => {
-                registration.update();
-                }, 60 * 60 * 1000); // 1 hour
+                        // Check for updates every hour
+                        setInterval(() => {
+                            registration.update();
+                        }, 60 * 60 * 1000); // 1 hour
 
-                // Handle updates
-                registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                
-                newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // New service worker available
-                    showUpdateNotification(registration);
-                    }
+                        // Handle updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available
+                                    showUpdateNotification(registration);
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker registration failed:', error);
+                    });
+
+                // Listen for controller change (new SW activated)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('🔄 New Service Worker activated, reloading page');
+                    window.location.reload();
                 });
-                });
-            })
-            .catch((error) => {
-                console.error('❌ Service Worker registration failed:', error);
             });
 
-            // Listen for controller change (new SW activated)
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('🔄 New Service Worker activated, reloading page');
-            window.location.reload();
+            // Check if we're online/offline
+            window.addEventListener('online', () => {
+                console.log('🌐 Back online!');
+                hideOfflineBanner();
             });
-        });
 
-        // Check if we're online/offline
-        window.addEventListener('online', () => {
-            console.log('🌐 Back online!');
-            hideOfflineBanner();
-        });
-
-        window.addEventListener('offline', () => {
-            console.log('📡 You are offline');
-            showOfflineBanner();
-        });
+            window.addEventListener('offline', () => {
+                console.log('📡 You are offline');
+                showOfflineBanner();
+            });
         }
 
         // Show update notification
         function showUpdateNotification(registration) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.id = 'sw-update-notification';
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #417690;
-            color: white;
-            padding: 16px 24px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            max-width: 90%;
-        `;
-        
-        notification.innerHTML = `
-            <span>🎉 New version available!</span>
-            <button id="sw-update-btn" style="
-            background: white;
-            color: #ff6600;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            ">Update Now</button>
-            <button id="sw-dismiss-btn" style="
-            background: transparent;
-            color: white;
-            border: 1px solid white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            ">Later</button>
-        `;
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.id = 'sw-update-notification';
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #417690;
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-size: 14px;
+                max-width: 90%;
+            `;
 
-        document.body.appendChild(notification);
+            notification.innerHTML = `
+                <span>🎉 New version available!</span>
+                <button id="sw-update-btn" style="
+                background: white;
+                color: #ff6600;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                ">Update Now</button>
+                <button id="sw-dismiss-btn" style="
+                background: transparent;
+                color: white;
+                border: 1px solid white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 13px;
+                ">Later</button>
+            `;
 
-        // Handle update button
-        document.getElementById('sw-update-btn').addEventListener('click', () => {
-            if (registration.waiting) {
-            // Tell the waiting service worker to activate
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-            }
-            notification.remove();
-        });
+            document.body.appendChild(notification);
 
-        // Handle dismiss button
-        document.getElementById('sw-dismiss-btn').addEventListener('click', () => {
-            notification.remove();
-        });
+            // Handle update button
+            document.getElementById('sw-update-btn').addEventListener('click', () => {
+                if (registration.waiting) {
+                    // Tell the waiting service worker to activate
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+                notification.remove();
+            });
+
+            // Handle dismiss button
+            document.getElementById('sw-dismiss-btn').addEventListener('click', () => {
+                notification.remove();
+            });
         }
 
         // Show offline banner
@@ -2178,6 +2620,12 @@
         });
         }
     </script>
+
+    <!-- Floating Cart Button -->
+    <div id="floatingCart" class="floating-cart" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart text-white text-xl"></i>
+        <span id="floatingCartBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+    </div>
 
     <!-- Store Loading Overlay -->
     <div id="storeLoadingOverlay" class="store-loading-overlay hidden">

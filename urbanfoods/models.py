@@ -28,7 +28,7 @@ class FoodCategory(models.Model):
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True)  # emoji or icon class
     order = models.IntegerField(default=0)  # for sorting
-    store_type = models.CharField(max_length=10, choices=STORE_CHOICES, default='food')
+    store_type = models.CharField(max_length=10, choices=STORE_CHOICES, default='liquor')
     
     class Meta:
         verbose_name_plural = "Food Categories"
@@ -55,7 +55,7 @@ class FoodItem(models.Model):
     is_featured = models.BooleanField(default=False)
     is_meal_of_day = models.BooleanField(default=False)
     times_ordered = models.IntegerField(default=0)  # for popularity tracking
-    store_type = models.CharField(max_length=10, choices=STORE_CHOICES, default='food')
+    store_type = models.CharField(max_length=10, choices=STORE_CHOICES, default='liquor')
     bottle_size = models.CharField(max_length=20, blank=True, help_text="For liquor items (e.g., 250ml, 500ml, 750ml)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -169,7 +169,7 @@ class Order(models.Model):
         ('food', 'Food Store'),
         ('liquor', 'Liquor Store'),
         ('grocery', 'Grocery Shop')
-    ], default='food')
+    ], default='liquor')
 
     # MPESA specific fields
     mpesa_checkout_request_id = models.CharField(max_length=50, blank=True, null=True)

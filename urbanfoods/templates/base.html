@@ -18,7 +18,7 @@
     <!-- Microsoft/Edge specific -->
     <meta name="msapplication-TileColor" content="#ea580c">
     <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
-    <meta name="application-name" content="Urban Dreams Cafe">
+    <meta name="application-name" content="Tipsy Theoryy">
 
     
     <!-- Bootstrap CSS -->
@@ -62,21 +62,42 @@
         .container {
             max-width: 1200px;
         }
-        /* Logo styling - KFC style */
+        /* Logo styling - Liquor style */
         .brand-logo {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Playfair Display', serif;
             font-weight: 900;
             font-size: 2.5rem;
-            color: #ea580c;
+            background: linear-gradient(45deg, #722f37, #DAA520);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             font-style: italic;
             transform: skewX(-5deg);
             letter-spacing: 0.05em;
             text-transform: uppercase;
             margin: 0;
             line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 640px) {
+            .brand-logo {
+                font-size: 1.5rem;
+                letter-spacing: 0.02em;
+                line-height: 1.1;
+            }
+        }
+        @media (max-width: 480px) {
+            .brand-logo {
+                font-size: 1.25rem;
+                transform: skewX(-3deg);
+            }
         }
         [data-bs-theme="dark"] .brand-logo {
-            color: #DC143C !important;
+            background: linear-gradient(45deg, #a0454a, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.1);
         }
         /* Dark mode input fields */
         [data-bs-theme="dark"] input[type="text"],
@@ -167,13 +188,31 @@
             color: white !important;
         }
         
+        /* Glassy Header */
+        .glassy-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
+        }
+
+        [data-bs-theme="dark"] .glassy-header {
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         /* Dark mode support for navigation */
         [data-bs-theme="dark"] .navbar {
             background-color: #2d2d2d !important;
             border-bottom: 1px solid #404040;
         }
         [data-bs-theme="dark"] .navbar-brand .brand-logo {
-            color: #DC143C !important;
+            background: linear-gradient(45deg, #a0454a, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.1);
         }
         [data-bs-theme="dark"] .navbar-brand small {
             color: #a3a3a3 !important;
@@ -309,11 +348,11 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm position-sticky top-0" style="background-color: white; z-index: 1000;">
+    <nav class="navbar navbar-expand-lg glassy-header position-sticky top-0" style="z-index: 1000;">
         <div class="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <a class="navbar-brand fw-bold" href="{% url 'homepage' %}" style="text-decoration: none;">
-                <h1 class="brand-logo">UDC</h1>
-                <!--small class="text-sm text-gray-500 -mt-1" style="margin-left: 8px; font-size: x-small;">Urban Dreams Cafe</small-->
+                <h1 class="brand-logo">TIPSY THEORYY</h1>
+                <!--small class="text-sm text-gray-500 -mt-1" style="margin-left: 8px; font-size: x-small;">Tipsy Theoryy</small-->
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -490,8 +529,12 @@
         function updateCartUI(data) {
             const cartContent = document.getElementById('cartContent');
             const cartBadge = document.getElementById('cartBadge');
-            
+            const floatingCartBadge = document.getElementById('floatingCartBadge');
+
             cartBadge.textContent = data.cart_count || 0;
+            if (floatingCartBadge) {
+                floatingCartBadge.textContent = data.cart_count || 0;
+            }
             
             if (data.items.length === 0) {
                 cartContent.innerHTML = '<p class="text-center text-muted">Your cart is empty</p>';
@@ -730,7 +773,23 @@
             }
         });
         {% endif %}
+
+        // Show floating cart for authenticated users
+        {% if user.is_authenticated %}
+        document.addEventListener('DOMContentLoaded', () => {
+            const floatingCart = document.getElementById('floatingCart');
+            if (floatingCart) {
+                floatingCart.style.display = 'flex';
+            }
+        });
+        {% endif %}
     </script>
+
+    <!-- Floating Cart Button -->
+    <!-- <div id="floatingCart" class="floating-cart" onclick="toggleCart()" style="display: none;">
+        <i class="fas fa-shopping-cart text-white text-xl"></i>
+        <span id="floatingCartBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+    </div> -->
 
     <!-- Store Loading Overlay -->
     <div id="storeLoadingOverlay" class="store-loading-overlay hidden">

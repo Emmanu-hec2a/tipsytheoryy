@@ -20,15 +20,15 @@
     {% if active_orders %}
     <div class="row mb-5">
         <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header text-white" style="background-color: #ea580c;">
+            <div class="glassmorphism-card shadow-sm border-0 rounded-xl overflow-hidden">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #722f37, #DAA520);">
                     <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Active Orders</h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
                         {% for order in active_orders %}
                         <div class="col-lg-6 col-xl-4">
-                            <div class="card h-100 border-0 shadow-sm hover-shadow">
+                            <div class="glassmorphism-card h-100 border-0 shadow-sm rounded-xl overflow-hidden hover-shadow">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <div>

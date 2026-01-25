@@ -22,7 +22,7 @@ def offline(request):
 def homepage(request):
     """Main food catalog page"""
     # Get store type from session or default to 'food'
-    store_type = request.session.get('store_type', 'food')
+    store_type = request.session.get('store_type', 'liquor')
     
     # Filter categories by store type
     categories = FoodCategory.objects.filter(store_type=store_type)
