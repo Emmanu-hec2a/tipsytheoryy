@@ -62,62 +62,61 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+    document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const store_type = document.getElementById('store_type').value;
-    const remember = document.getElementById('remember').checked;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const remember = document.getElementById('remember').checked;
 
-    const button = document.getElementById('loginBtn');
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
-    button.disabled = true;
+        const button = document.getElementById('loginBtn');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
+        button.disabled = true;
 
-    fetch('/admin-panel/login/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({
-            username: username,
-            password: password,
-            store_type: store_type,
-            remember: remember
+        fetch('/admin-panel/login/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                remember: remember
+            })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Login successful! Redirecting...', 'success');
-            setTimeout(() => {
-                window.location.href = data.redirect;
-            }, 1000);
-        } else {
-            showAlert(data.message, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Login error:', error);
-        showAlert('An error occurred during login', 'danger');
-    })
-    .finally(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1000);
+            } else {
+                showAlert(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Login error:', error);
+            showAlert('An error occurred during login', 'danger');
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
     });
-});
 
-function showAlert(message, type) {
-    const alertContainer = document.getElementById('alertContainer');
-    alertContainer.innerHTML = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-}
+
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        alertContainer.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
 </script>
 {% endblock %}

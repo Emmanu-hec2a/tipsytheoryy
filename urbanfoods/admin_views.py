@@ -21,42 +21,54 @@ def staff_member_required(view_func=None, login_url='admin_login'):
         return actual_decorator(view_func)
     return actual_decorator
 
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.http import JsonResponse
+import json
+
 def admin_login(request):
-    """Admin login page"""
+    """Admin login page with AJAX support"""
+    # If staff user is already logged in
     if request.user.is_authenticated and request.user.is_staff:
-        return redirect('admin_dashboard')
-
-    if request.method == 'POST':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request: return JSON
+            return JsonResponse({
+                'success': True,
+                'redirect': '/admin-panel/liquor/'
+            })
+        # Normal request: redirect
+        return redirect('/admin-panel/liquor/')
+
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
             data = json.loads(request.body)
-            username = data.get('username')
-            password = data.get('password')
-            store_type = data.get('store_type', 'main')
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
 
-            user = authenticate(username=username, password=password)
+        username = data.get('username')
+        password = data.get('password')
 
-            if user is not None and user.is_staff:
-                login(request, user)
-                # Redirect based on store type
-                if store_type == 'liquor':
-                    redirect_url = '/admin-panel/liquor/'
-                elif store_type == 'grocery':
-                    redirect_url = '/admin-panel/grocery/'
-                else:
-                    redirect_url = '/admin-panel/'
+        if not username or not password:
+            return JsonResponse({'success': False, 'message': 'Username and password are required'}, status=400)
 
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Admin login successful!',
-                    'redirect': redirect_url
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Invalid admin credentials or insufficient permissions'
-                })
+        user = authenticate(username=username, password=password)
 
+        if user is not None and user.is_staff:
+            login(request, user)
+            return JsonResponse({
+                'success': True,
+                'message': 'Admin login successful!',
+                'redirect': '/admin-panel/liquor/'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid admin credentials or insufficient permissions'
+            }, status=401)
+
+    # For non-AJAX GET requests, render the login page
     return render(request, 'custom_admin/login.html')
+
 
 # ==================== ADMIN DASHBOARD ====================
 
