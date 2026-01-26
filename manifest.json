@@ -1,12 +1,12 @@
 {
-  "name": "UrbanDreamCafe",
-  "short_name": "UrbanDreams",
+  "name": "Tipsy Theoryy",
+  "short_name": "TipsyTheoryy",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ff6600",
   "orientation": "portrait",
-  "description": "Your favorite place for delicious food and great vibes.",
+  "description": "Your favorite place for cold liqour and great vibes.",
   "icons": [
     {
       "src": "/static/images/favicon.png",

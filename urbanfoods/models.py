@@ -23,12 +23,13 @@ class FoodCategory(models.Model):
         ('liquor', 'Liquor Store'),
         ('grocery', 'Grocery Shop'),
     ]
-    
+
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True)  # emoji or icon class
     order = models.IntegerField(default=0)  # for sorting
     store_type = models.CharField(max_length=10, choices=STORE_CHOICES, default='liquor')
+    stock_quantity = models.PositiveIntegerField(default=0, help_text="Available stock for this category (for liquor store)")
     
     class Meta:
         verbose_name_plural = "Food Categories"

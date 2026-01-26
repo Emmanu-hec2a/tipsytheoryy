@@ -30,14 +30,18 @@
                         <div class="card-body">
                             <h6 class="card-title">{{ category.name }}</h6>
                             <p class="card-text">{{ category.description }}</p>
+                            <div class="mb-2">
+                                <small class="text-muted">Stock: <span class="fw-semibold">{{ category.stock_quantity }}</span> units</small>
+                            </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">Order: {{ category.order }}</small>
         <div class="btn-group btn-group-sm">
-            <button class="btn btn-outline-secondary edit-category-btn" 
-                    data-id="{{ category.id }}" 
-                    data-name="{{ category.name }}" 
-                    data-description="{{ category.description }}" 
-                    data-order="{{ category.order }}">
+            <button class="btn btn-outline-secondary edit-category-btn"
+                    data-id="{{ category.id }}"
+                    data-name="{{ category.name }}"
+                    data-description="{{ category.description }}"
+                    data-order="{{ category.order }}"
+                    data-stock="{{ category.stock_quantity }}">
                 Edit
             </button>
             <button class="btn btn-outline-danger delete-category-btn" data-id="{{ category.id }}">
@@ -152,6 +156,11 @@
                     <div class="mb-3">
                         <label for="categoryOrder" class="form-label">Order</label>
                         <input type="number" class="form-control" id="categoryOrder" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryStock" class="form-label">Stock Quantity</label>
+                        <input type="number" class="form-control" id="categoryStock" value="0" min="0">
+                        <small class="form-text text-muted">Available stock for this liquor category</small>
                     </div>
                 </form>
             </div>
@@ -305,11 +314,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = this.dataset.name;
             const description = this.dataset.description;
             const order = this.dataset.order;
+            const stock = this.dataset.stock;
 
             document.getElementById('categoryId').value = id;
             document.getElementById('categoryName').value = name;
             document.getElementById('categoryDescription').value = description;
             document.getElementById('categoryOrder').value = order;
+            document.getElementById('categoryStock').value = stock;
 
             var addCategoryModal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
             addCategoryModal.show();
@@ -322,6 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = document.getElementById('categoryName').value;
         const description = document.getElementById('categoryDescription').value;
         const order = document.getElementById('categoryOrder').value;
+        const stock = document.getElementById('categoryStock').value;
 
         const url = id ? `{% url 'edit_category' %}` : `{% url 'add_category' %}`;
 
@@ -336,6 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: name,
                 description: description,
                 order: order,
+                stock_quantity: stock,
                 store_type: 'liquor'
             })
         })

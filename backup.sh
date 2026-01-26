@@ -2,7 +2,7 @@
 # Complete Django Site Backup Script
 # Run this locally with Git Bash
 
-echo "=== UrbanDream Cafe - Complete Backup ==="
+echo "=== TipsyTheoryy - Complete Backup ==="
 echo ""
 
 # Create backup directory with timestamp
@@ -90,7 +90,7 @@ fi
 # 8. Create backup summary
 echo "📝 Creating backup summary..."
 cat > "$BACKUP_DIR/README.txt" << EOF
-UrbanDream Cafe - Complete Backup
+TipsyTheoryy - Complete Backup
 Created: $(date)
 ================================================
 

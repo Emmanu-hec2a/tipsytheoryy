@@ -142,7 +142,7 @@ def admin_dashboard(request):
         'revenue_trend': list(revenue_trend),
     }
 
-    return render(request, 'custom_admin/dashboard.html', context)
+    return render(request, 'custom_admin/liquor_dashboard.html', context)
 
 @staff_member_required(login_url='admin_login')
 def admin_dashboard_stats(request):
@@ -221,7 +221,7 @@ def admin_orders(request):
         'payment_status_filter': payment_status_filter,
     }
 
-    return render(request, 'custom_admin/orders.html', context)
+    return render(request, 'custom_admin/liquor_orders.html', context)
 
 @staff_member_required(login_url='admin_login')
 def get_new_orders(request):
@@ -256,7 +256,7 @@ def get_new_orders(request):
         send_push_to_all(
             title="New Order Received 🍔",
             body=f"Order #{order.order_number} by {order.user.username} for KES {order.total}",
-            url=f"/admin-panel/orders/{order.id}/"  # optional admin link
+            url=f"/admin-panel/liquor/orders/{order.id}/"  # optional admin link
         )
 
     return JsonResponse({
@@ -269,7 +269,7 @@ def get_new_orders(request):
 @staff_member_required(login_url='admin_login')
 def admin_order_detail(request, order_number):
     """View detailed order information"""
-    order = get_object_or_404(Order, order_number=order_number)
+    order = get_object_or_404(Order.objects.select_related('user'), order_number=order_number)
     status_history = order.status_history.all()
 
     context = {
@@ -294,9 +294,20 @@ def update_order_status(request):
         old_status = order.status
         order.status = new_status
 
-        # Set delivered timestamp
-        if new_status == 'delivered':
+        # Set delivered timestamp and reduce stock
+        if new_status == 'delivered' and old_status != 'delivered':
             order.delivered_at = timezone.now()
+
+            # Reduce stock for liquor items
+            for item in order.items.filter(food_item__store_type='liquor'):
+                category = item.food_item.category
+                if category.stock_quantity >= item.quantity:
+                    category.stock_quantity -= item.quantity
+                    category.save()
+                else:
+                    # Insufficient stock - this shouldn't happen in normal flow
+                    # but handle gracefully
+                    pass
 
         order.save()
 
@@ -715,6 +726,7 @@ def add_category(request):
         name = data.get('name')
         description = data.get('description', '')
         order = data.get('order', 0)
+        stock_quantity = data.get('stock_quantity', 0)
 
         if not name:
             return JsonResponse({'success': False, 'message': 'Category name is required'})
@@ -724,6 +736,7 @@ def add_category(request):
             name=name,
             description=description,
             order=order,
+            stock_quantity=stock_quantity,
             store_type=store_type
         )
 
@@ -744,6 +757,7 @@ def edit_category(request):
         name = data.get('name')
         description = data.get('description', '')
         order = data.get('order', 0)
+        stock_quantity = data.get('stock_quantity', 0)
 
         if not category_id or not name:
             return JsonResponse({'success': False, 'message': 'Category ID and name are required'})
@@ -752,6 +766,7 @@ def edit_category(request):
         category.name = name
         category.description = description
         category.order = order
+        category.stock_quantity = stock_quantity
         category.save()
 
         return JsonResponse({

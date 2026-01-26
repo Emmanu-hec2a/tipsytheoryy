@@ -4,50 +4,91 @@
 {% block title %}Order {{ order.order_number }} - Tipsy Theoryy Admin{% endblock %}
 
 {% block content %}
-<div class="container-fluid my-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 style="color: #2d3748;">Order #{{ order.order_number }}</h2>
-        <div>
-            <a href="{% url 'admin_orders' %}" class="btn btn-secondary">Back to Orders</a>
+<!-- Welcome Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Order #{{ order.order_number }}</h2>
+                    <p class="text-muted mb-0">Manage and track this liquor order</p>
+                </div>
+                <div class="text-end">
+                    <div class="current-time" id="currentTime"></div>
+                    <small class="text-muted">{{ "now"|date:"l, F j, Y" }}</small>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Order Details</h5>
-                        <span class="badge bg-{{ order.status|lower }}">{{ order.get_status_display }}</span>
+<div class="row g-4">
+    <!-- Order Details Card -->
+    <div class="col-lg-8">
+        <div class="admin-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Order Details</h5>
+                <span class="badge status-{{ order.status }} fs-6 px-3 py-2">{{ order.get_status_display }}</span>
+            </div>
+            <div class="card-body">
+                <!-- Customer & Delivery Info -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <h6 class="section-title"><i class="fas fa-user me-2"></i>Customer Information</h6>
+                            <div class="info-content">
+                                <div class="info-item">
+                                    <span class="label">Name:</span>
+                                    <span class="value">{{ order.user.get_full_name|default:order.user.username }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Email:</span>
+                                    <span class="value">{{ order.user.email }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Phone:</span>
+                                    <span class="value">{{ order.user.phone_number }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-section">
+                            <h6 class="section-title"><i class="fas fa-truck me-2"></i>Delivery Information</h6>
+                            <div class="info-content">
+                                <div class="info-item">
+                                    <span class="label">Hostel:</span>
+                                    <span class="value">{{ order.hostel }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Room:</span>
+                                    <span class="value">{{ order.room_number }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Phone:</span>
+                                    <span class="value">{{ order.phone_number }}</span>
+                                </div>
+                                {% if order.delivery_notes %}
+                                <div class="info-item">
+                                    <span class="label">Notes:</span>
+                                    <span class="value">{{ order.delivery_notes }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Customer Information</h6>
-                            <p><strong>Name:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
-                            <p><strong>Email:</strong> {{ order.user.email }}</p>
-                            <p><strong>Phone:</strong> {{ order.user.phone_number }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Delivery Information</h6>
-                            <p><strong>Hostel:</strong> {{ order.hostel }}</p>
-                            <p><strong>Room:</strong> {{ order.room_number }}</p>
-                            <p><strong>Phone:</strong> {{ order.phone_number }}</p>
-                            {% if order.delivery_notes %}
-                            <p><strong>Notes:</strong> {{ order.delivery_notes }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <hr>
-                    
-                    <h6>Order Items</h6>
+
+                <!-- Order Items -->
+                <div class="order-items-section">
+                    <h6 class="section-title mb-3"><i class="fas fa-wine-bottle me-2"></i>Order Items</h6>
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-admin">
                             <thead>
                                 <tr>
                                     <th>Item</th>
+                                    <th>Category</th>
+                                    <th>Size</th>
                                     <th>Quantity</th>
                                     <th>Price</th>
                                     <th>Subtotal</th>
@@ -56,30 +97,40 @@
                             <tbody>
                                 {% for item in order.items.all %}
                                 <tr>
-                                    <td>{{ item.food_item.name }}</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>KES {{ item.price_at_order }}</td>
-                                    <td>KES {{ item.subtotal }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.food_item.image.url }}" alt="{{ item.food_item.name }}" class="item-image me-3" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px;">
+                                            <span class="fw-semibold">{{ item.food_item.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.food_item.category.name }}</td>
+                                    <td>{{ item.food_item.bottle_size|default:"-" }}</td>
+                                    <td><span class="badge bg-primary">{{ item.quantity }}</span></td>
+                                    <td class="fw-semibold">KES {{ item.price_at_order }}</td>
+                                    <td class="fw-bold text-success">KES {{ item.subtotal }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    
-                    <div class="row mt-3">
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary mt-4">
+                    <div class="row">
                         <div class="col-md-6 offset-md-6">
-                            <div class="border-top pt-3">
-                                <div class="d-flex justify-content-between">
-                                    <span>Subtotal:</span>
-                                    <span>KES {{ order.subtotal }}</span>
+                            <div class="summary-card">
+                                <div class="summary-item">
+                                    <span class="label">Subtotal:</span>
+                                    <span class="value">KES {{ order.subtotal }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Delivery Fee:</span>
-                                    <span>KES {{ order.delivery_fee }}</span>
+                                <div class="summary-item">
+                                    <span class="label">Delivery Fee:</span>
+                                    <span class="value">KES {{ order.delivery_fee }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between fw-bold">
-                                    <span>Total:</span>
-                                    <span>KES {{ order.total }}</span>
+                                <div class="summary-item total">
+                                    <span class="label">Total:</span>
+                                    <span class="value">KES {{ order.total }}</span>
                                 </div>
                             </div>
                         </div>
@@ -87,59 +138,97 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-lg-4">
-            <!-- Status Update -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Update Status</h6>
-                </div>
-                <div class="card-body">
-                    <form id="statusForm">
-                        <div class="mb-3">
-                            <label for="newStatus" class="form-label">Status</label>
-                            <select class="form-select" id="newStatus" name="status">
-                                <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
-                                <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
-                                <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
-                                <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
-                                <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="statusNotes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="statusNotes" name="notes" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Update Status</button>
-                    </form>
-                </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Actions -->
+        <div class="admin-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
             </div>
-            
-            <!-- Status History -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Status History</h6>
-                </div>
-                <div class="card-body">
-                    {% if status_history %}
-                    <div class="timeline">
-                        {% for history in status_history %}
-                        <div class="timeline-item">
-                            <div class="timeline-marker bg-primary"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-1">{{ history.get_status_display }}</h6>
-                                <small class="text-muted">{{ history.timestamp|date:"M d, Y H:i" }}</small>
-                                {% if history.notes %}
-                                <p class="mb-0 mt-1">{{ history.notes }}</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted mb-0">No status history available</p>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'liquor_orders' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                    </a>
+                    {% if order.status == 'pending' %}
+                    <button class="btn btn-success" onclick="updateStatus('preparing')">
+                        <i class="fas fa-play me-2"></i>Start Preparing
+                    </button>
+                    {% elif order.status == 'preparing' %}
+                    <button class="btn btn-warning" onclick="updateStatus('out_for_delivery')">
+                        <i class="fas fa-truck me-2"></i>Mark Out for Delivery
+                    </button>
+                    {% elif order.status == 'out_for_delivery' %}
+                    <button class="btn btn-success" onclick="updateStatus('delivered')">
+                        <i class="fas fa-check me-2"></i>Mark Delivered
+                    </button>
+                    {% endif %}
+                    {% if order.status != 'cancelled' and order.status != 'delivered' %}
+                    <button class="btn btn-danger" onclick="cancelOrder()">
+                        <i class="fas fa-times me-2"></i>Cancel Order
+                    </button>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+
+        <!-- Status Update -->
+        <div class="admin-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Update Status</h6>
+            </div>
+            <div class="card-body">
+                <form id="statusForm">
+                    <div class="mb-3">
+                        <label for="newStatus" class="form-label fw-semibold">Status</label>
+                        <select class="form-select form-select-lg" id="newStatus" name="status">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Preparing</option>
+                            <option value="out_for_delivery" {% if order.status == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+                            <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusNotes" class="form-label fw-semibold">Notes</label>
+                        <textarea class="form-control" id="statusNotes" name="notes" rows="3" placeholder="Add notes about this status change..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                        <i class="fas fa-save me-2"></i>Update Status
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Status History -->
+        <div class="admin-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-history me-2"></i>Status History</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if status_history %}
+                <div class="timeline p-3">
+                    {% for history in status_history %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-{{ history.status|lower }}"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1 fw-semibold">{{ history.get_status_display }}</h6>
+                            <small class="text-muted">{{ history.timestamp|date:"M d, Y H:i" }}</small>
+                            {% if history.notes %}
+                            <p class="mb-0 mt-2 text-dark">{{ history.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No status history available</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -178,6 +267,213 @@
 .timeline-content h6 {
     margin-bottom: 2px;
     font-size: 0.9rem;
+}
+
+/* Customer and Delivery Info Styles */
+.info-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.info-item .value {
+    font-weight: 500;
+    color: #111827;
+    text-align: right;
+    font-size: 0.875rem;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Admin Card Styles */
+.admin-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    transition: all 0.3s ease;
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+}
+
+/* Welcome Header */
+.welcome-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    border-radius: 16px;
+    color: white;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Order Summary */
+.summary-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+.summary-item.total {
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #059669;
+}
+
+.summary-item .label {
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.summary-item .value {
+    font-weight: 600;
+    color: #111827;
+}
+
+/* Table Styles */
+.table-admin {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-admin thead th {
+    background: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    color: #374151;
+    padding: 1rem;
+}
+
+.table-admin tbody td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* Status Badges */
+.badge.status-pending {
+    background: #fbbf24;
+    color: #92400e;
+}
+
+.badge.status-preparing {
+    background: #3b82f6;
+    color: white;
+}
+
+.badge.status-out_for_delivery {
+    background: #f59e0b;
+    color: #92400e;
+}
+
+.badge.status-delivered {
+    background: #10b981;
+    color: white;
+}
+
+.badge.status-cancelled {
+    background: #ef4444;
+    color: white;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .info-section {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .info-item .label {
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .info-item .value {
+    color: #f3f4f6;
+}
+
+[data-bs-theme="dark"] .section-title {
+    color: #f3f4f6;
+}
+
+[data-bs-theme="dark"] .admin-card {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .welcome-header {
+    background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+}
+
+[data-bs-theme="dark"] .summary-card {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .summary-item .label {
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .summary-item .value {
+    color: #f3f4f6;
+}
+
+[data-bs-theme="dark"] .table-admin thead th {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+}
+
+[data-bs-theme="dark"] .table-admin tbody td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #f3f4f6;
 }
 </style>
 

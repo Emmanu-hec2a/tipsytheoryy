@@ -1,9 +1,9 @@
 // service-worker.js
-// UrbanDreamCafe PWA Service Worker
+// TipsyTheoryy PWA Service Worker
 // Version: 1.0.1 - Update this version number when you make changes!
 
-const CACHE_VERSION = 'v3.0.2'; // Increment this to force cache update
-const CACHE_NAME = `urbandream-cache-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v3.0.3'; // Increment this to force cache update
+const CACHE_NAME = `tipsytheoryy-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline/'; // Django URL pattern
 
 // Assets to cache immediately on install
