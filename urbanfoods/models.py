@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 import uuid
+from PIL import Image
+from io import BytesIO
+from django.core.files.base import ContentFile
 
 class User(AbstractUser):
     """Extended user model for students"""
@@ -60,6 +63,30 @@ class FoodItem(models.Model):
     bottle_size = models.CharField(max_length=20, blank=True, help_text="For liquor items (e.g., 250ml, 500ml, 750ml)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        if self.image:
+            img = Image.open(self.image.path)
+
+            # Convert to RGB (important for PNGs with transparency)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+
+            # Resize if too large
+            max_size = (800, 800)
+            img.thumbnail(max_size, Image.LANCZOS)
+
+            # Compress
+            buffer = BytesIO()
+            img.save(buffer, format='JPEG', quality=75, optimize=True)
+            file_content = ContentFile(buffer.getvalue())
+
+            # Replace original image
+            self.image.save(self.image.name, file_content, save=False)
+
+            super().save(update_fields=['image'])
     
     @property
     def is_liquor(self):

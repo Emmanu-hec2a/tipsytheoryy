@@ -23,7 +23,7 @@ ADMIN_SESSION_COOKIE_NAME = "admin_sessionid"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['192.168.48.227', 'localhost', '127.0.0.1', 'urbandreamcafe.up.railway.app', 'https://liqour-tipsytheoryy.up.railway.app', '*']
+ALLOWED_HOSTS = ['192.168.48.227', 'localhost', '127.0.0.1', 'https://liqour-tipsytheoryy.up.railway.app', '*']
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5050",
@@ -148,7 +148,7 @@ if DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 else:
     
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 # Session Configuration
 SESSION_COOKIE_AGE = 604800  # 1 week
