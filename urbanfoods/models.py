@@ -6,6 +6,7 @@ import uuid
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
+import os
 
 class User(AbstractUser):
     """Extended user model for students"""
@@ -35,7 +36,7 @@ class FoodCategory(models.Model):
     stock_quantity = models.PositiveIntegerField(default=0, help_text="Available stock for this category (for liquor store)")
     
     class Meta:
-        verbose_name_plural = "Food Categories"
+        verbose_name_plural = "Liquor Categories"
         ordering = ['order', 'name']
     
     def __str__(self):
@@ -65,28 +66,40 @@ class FoodItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    # Only process image on first save or when image changes
+        if self.image and not self.pk:
+            img = Image.open(self.image)
 
-        if self.image:
-            img = Image.open(self.image.path)
-
-            # Convert to RGB (important for PNGs with transparency)
+            # Convert to RGB (PNG / transparency safe)
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
 
-            # Resize if too large
+            # Resize
             max_size = (800, 800)
             img.thumbnail(max_size, Image.LANCZOS)
 
             # Compress
             buffer = BytesIO()
-            img.save(buffer, format='JPEG', quality=75, optimize=True)
-            file_content = ContentFile(buffer.getvalue())
+            img.save(
+                buffer,
+                format="JPEG",
+                quality=88,
+                optimize=True,
+                progressive=True,
+                subsampling="4:4:4"   # IMPORTANT for label text
+            )
+            buffer.seek(0)
 
-            # Replace original image
-            self.image.save(self.image.name, file_content, save=False)
+            # IMPORTANT: strip directory name
+            filename = os.path.basename(self.image.name)
 
-            super().save(update_fields=['image'])
+            self.image.save(
+                filename,
+                ContentFile(buffer.read()),
+                save=False
+            )
+
+        super().save(*args, **kwargs)
     
     @property
     def is_liquor(self):

@@ -23,10 +23,11 @@ ADMIN_SESSION_COOKIE_NAME = "admin_sessionid"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['192.168.48.227', 'localhost', '127.0.0.1', 'https://liqour-tipsytheoryy.up.railway.app', '*']
+ALLOWED_HOSTS = ['192.168.48.227', 'localhost', '127.0.0.1', 'https://tipsytheoryy.com', 'https://liqour-tipsytheoryy.up.railway.app', '*']
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5050",
+    'https://tipsytheoryy.com',
     'https://liqour-tipsytheoryy.up.railway.app',
     "http://localhost:5050",
     "http://192.168.48.227:5050",

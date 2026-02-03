@@ -635,6 +635,39 @@
             50% { transform: translateY(-10px); }
         }
 
+        /* Floating WhatsApp Button */
+        .floating-whatsapp {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(37, 211, 102, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            box-shadow: 0 8px 32px 0 rgba(37, 211, 102, 0.37);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            animation: float-whatsapp 3s ease-in-out infinite;
+        }
+
+        .floating-whatsapp:hover {
+            background: rgba(37, 211, 102, 1);
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px 0 rgba(37, 211, 102, 0.5);
+        }
+
+        @keyframes float-whatsapp {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
         /* Store Loading Spinner */
         .store-loading-overlay {
             position: fixed;
@@ -1316,7 +1349,7 @@
 
     {% if user.is_authenticated %}
     <!-- Enhanced PWA Install Popup -->
-    <div id="pwaInstallPopup" class="pwa-install-popup hidden fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-50 max-w-xs animate-fade-in">
+    <div id="pwaInstallPopup" class="pwa-install-popup hidden fixed bottom-5 right-5 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-[1001] max-w-xs animate-fade-in">
         <div class="flex items-center gap-3">
             <div class="flex-shrink-0">
                 <img src="{% static 'images/favicon.png' %}" alt="TT" class="w-10 h-10 rounded-lg">
@@ -2634,7 +2667,20 @@
             }
         });
         }
+
+        // Open WhatsApp function
+        function openWhatsApp() {
+            const phoneNumber = '254110345054'; // Replace with your actual WhatsApp business number
+            const message = 'Hello! I need assistance with my order.';
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
     </script>
+
+    <!-- Floating WhatsApp Button -->
+    <div class="floating-whatsapp" onclick="openWhatsApp()">
+        <i class="fab fa-whatsapp text-white text-xl"></i>
+    </div>
 
     <!-- Floating Cart Button -->
     <div id="floatingCart" class="floating-cart" onclick="toggleCart()">

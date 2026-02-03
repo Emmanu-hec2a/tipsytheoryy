@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import user_passes_test
+from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.hashers import check_password
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models.functions import ExtractHour, TruncDate
-from django.db.models import Count, Sum, Avg, Max
+from django.db.models import Count, Sum, Avg, Max, F
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from datetime import timedelta
@@ -72,136 +73,180 @@ def admin_login(request):
 
 # ==================== ADMIN DASHBOARD ====================
 
-@staff_member_required(login_url='admin_login')
-def admin_dashboard(request):
-    """Main admin dashboard with overview"""
-    # Check if this is an AJAX request for data refresh
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        today = timezone.now().date()
+VALID_STATUSES = ['delivered', 'completed']
 
-        # Today's statistics
-        today_orders = Order.objects.filter(created_at__date=today)
-        today_revenue = today_orders.aggregate(total=Sum('total'))['total'] or 0
-        pending_orders = Order.objects.filter(status='pending').count()
-        out_for_delivery = Order.objects.filter(status='out_for_delivery').count()
+def get_liquor_stats(date, week_start):
+    """Return today's and weekly stats for liquor store"""
+    today_orders = Order.objects.filter(
+        created_at__date=date,
+        items__food_item__store_type='liquor'
+    ).distinct()
 
-        # This week's stats for revenue trend
-        week_start = today - timedelta(days=today.weekday())
-        weekly_orders = Order.objects.filter(created_at__date__gte=week_start)
-        revenue_trend = weekly_orders.annotate(day=TruncDate('created_at')).values('day').annotate(
-            revenue=Sum('total'),
-            orders=Count('id')
-        ).order_by('day')
+    today_revenue = OrderItem.objects.filter(
+        order__created_at__date=date,
+        food_item__store_type='liquor',
+        order__status__in=['delivered', 'completed']
+    ).aggregate(total=Sum('price_at_order'))['total'] or 0
 
-        return JsonResponse({
-            'success': True,
-            'today_orders_count': today_orders.count(),
-            'today_revenue': today_revenue,
-            'pending_orders': pending_orders,
-            'out_for_delivery': out_for_delivery,
-            'daily_revenue': list(revenue_trend)
-        })
+    pending_orders = Order.objects.filter(
+        status='pending',
+        items__food_item__store_type='liquor'
+    ).distinct().count()
 
-    # Regular page load
-    today = timezone.now().date()
+    out_for_delivery = Order.objects.filter(
+        status='out_for_delivery',
+        items__food_item__store_type='liquor'
+    ).distinct().count()
 
-    # Today's statistics
-    today_orders = Order.objects.filter(created_at__date=today)
-    today_revenue = today_orders.aggregate(total=Sum('total'))['total'] or 0
-    pending_orders = Order.objects.filter(status='pending').count()
-    preparing_orders = Order.objects.filter(status='preparing').count()
-    out_for_delivery = Order.objects.filter(status='out_for_delivery').count()
+    weekly_orders = Order.objects.filter(
+        created_at__date__gte=week_start,
+        items__food_item__store_type='liquor'
+    ).distinct()
 
-    # Popular items today
-    popular_today = OrderItem.objects.filter(
-        order__created_at__date=today
-    ).values(
-        'food_item__name'
-    ).annotate(
+    weekly_revenue = OrderItem.objects.filter(
+        order__created_at__date__gte=week_start,
+        food_item__store_type='liquor',
+        order__status__in=['delivered', 'completed']
+    ).aggregate(total=Sum('price_at_order'))['total'] or 0
+
+    weekly_order_count = weekly_orders.count()
+    average_order_value = weekly_revenue / weekly_order_count if weekly_order_count else 0
+
+    return {
+        'today_orders_count': today_orders.count(),
+        'today_revenue': today_revenue,
+        'pending_orders': pending_orders,
+        'out_for_delivery': out_for_delivery,
+        'weekly_order_count': weekly_order_count,
+        'weekly_revenue': weekly_revenue,
+        'average_order_value': average_order_value,
+    }
+
+def get_popular_liquor_items(date):
+    return OrderItem.objects.filter(
+        order__created_at__date=date,
+        order__status__in=VALID_STATUSES,
+        order__store_type='liquor'
+    ).values('food_item__name').annotate(
         total_quantity=Sum('quantity'),
         total_revenue=Sum('price_at_order')
     ).order_by('-total_quantity')[:5]
 
-    # This week's stats
-    week_start = today - timedelta(days=today.weekday())
-    weekly_orders = Order.objects.filter(created_at__date__gte=week_start)
-    weekly_revenue = weekly_orders.aggregate(total=Sum('total'))['total'] or 0
-    weekly_order_count = weekly_orders.count()
-    average_order_value = weekly_revenue / weekly_order_count if weekly_order_count > 0 else 0
-    revenue_trend = weekly_orders.annotate(day=TruncDate('created_at')).values('day').annotate(
-        daily_revenue=Sum('total'),
-        order_count=Count('id')
-    ).order_by('day')
-
-    # Peak hours (last 7 days)
-    peak_hours = Order.objects.filter(
-        created_at__gte=timezone.now() - timedelta(days=7)
+def get_peak_hours(days=7):
+    from django.db.models.functions import ExtractHour
+    from django.utils import timezone
+    start = timezone.now() - timezone.timedelta(days=days)
+    return Order.objects.filter(
+        created_at__gte=start,
+        status__in=VALID_STATUSES,
+        store_type='liquor'
     ).annotate(hour=ExtractHour('created_at')).values('hour').annotate(
         order_count=Count('id')
     ).order_by('-order_count')[:5]
 
+
+@staff_member_required(login_url='admin_login')
+def admin_dashboard(request):
+    """Main admin dashboard with overview"""
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
+
+    stats = get_liquor_stats(date=today, week_start=week_start)
+    popular_today = get_popular_liquor_items(date=today)
+    peak_hours = get_peak_hours(days=7)
+
+    # Weekly revenue trend (daily)
+    weekly_items = OrderItem.objects.filter(
+        order__created_at__date__gte=week_start,
+        order__status__in=['delivered', 'completed'],
+        order__store_type='liquor'
+    ).annotate(day=TruncDate('order__created_at')).values('day').annotate(
+        daily_revenue=Sum('price_at_order'),
+        order_count=Count('order', distinct=True)
+    ).order_by('day')
+
     context = {
-        'today_orders_count': today_orders.count(),
-        'today_revenue': today_revenue,
-        'pending_orders': pending_orders,
-        'preparing_orders': preparing_orders,
-        'out_for_delivery': out_for_delivery,
+        'today_orders_count': stats['today_orders_count'],
+        'today_revenue': stats['today_revenue'],
+        'weekly_revenue': stats['weekly_revenue'],
+        'weekly_order_count': stats['weekly_order_count'],
+        'average_order_value': stats['average_order_value'],
         'popular_today': popular_today,
-        'weekly_orders': weekly_orders.count(),
-        'weekly_revenue': weekly_revenue,
-        'average_order_value': average_order_value,
         'peak_hours': peak_hours,
-        'revenue_trend': list(revenue_trend),
+        'revenue_trend': list(weekly_items),
     }
 
-    return render(request, 'custom_admin/liquor_dashboard.html', context)
+    # If AJAX request, return JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(context)
+
+    return render(request, 'custom_admin/admin_dashboard.html', context)
 
 @staff_member_required(login_url='admin_login')
 def admin_dashboard_stats(request):
-    """API endpoint to provide dashboard stats for refresh"""
-    if request.method == 'GET':
-        today = timezone.now().date()
+    """AJAX endpoint for liquor dashboard stats"""
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())
 
-        # Today's statistics
-        today_orders = Order.objects.filter(created_at__date=today)
-        today_revenue = today_orders.aggregate(total=Sum('total'))['total'] or 0
-        pending_orders = Order.objects.filter(status='pending').count()
-        out_for_delivery = Order.objects.filter(status='out_for_delivery').count()
+    # Today's orders
+    today_orders = Order.objects.filter(created_at__date=today, store_type='liquor')
 
-        # This week's stats for revenue trend
-        week_start = today - timedelta(days=today.weekday())
-        weekly_orders = Order.objects.filter(created_at__date__gte=week_start)
-        revenue_trend = (
-            weekly_orders
-            .annotate(day=TruncDate('created_at'))
-            .values('day')
-            .annotate(
-                revenue=Sum('total'),
-                orders=Count('id')
-            )
-            .order_by('day')
-        )
+    # Revenue including delivery fee (only delivered/completed)
+    today_items_revenue = OrderItem.objects.filter(
+        order__in=today_orders,
+        food_item__store_type='liquor',
+        order__status__in=VALID_STATUSES
+    ).aggregate(revenue=Sum('price_at_order'))['revenue'] or 0
 
-        # Convert queryset into JSON-safe format
-        trend_data = [
-            {
-                "day": str(item["day"]),               # date → string
-                "revenue": float(item["revenue"] or 0),# decimal → float
-                "orders": item["orders"]
-            }
-            for item in revenue_trend
-        ]
+    today_delivery_fee = today_orders.filter(
+        status__in=VALID_STATUSES
+    ).aggregate(fee=Sum('delivery_fee'))['fee'] or 0
 
-        return JsonResponse({
-            'success': True,
-            'today_orders_count': today_orders.count(),
-            'today_revenue': float(today_revenue or 0),
-            'pending_orders': pending_orders,
-            'out_for_delivery': out_for_delivery,
-            'daily_revenue': trend_data
-        }, safe=False)
+    today_revenue = float(today_items_revenue + today_delivery_fee)
 
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
+    # Pending and out-for-delivery orders
+    pending_orders = Order.objects.filter(status='pending', store_type='liquor').count()
+    out_for_delivery = Order.objects.filter(status='out_for_delivery', store_type='liquor').count()
+
+    # Weekly revenue trend
+    weekly_orders = Order.objects.filter(
+        created_at__date__gte=week_start,
+        store_type='liquor'
+    )
+
+    weekly_items = OrderItem.objects.filter(
+        order__in=weekly_orders,
+        food_item__store_type='liquor',
+        order__status__in=VALID_STATUSES
+    ).annotate(day=TruncDate('order__created_at')).values('day').annotate(
+        revenue=Sum('price_at_order'),
+        orders=Count('order', distinct=True)
+    ).order_by('day')
+
+    # Add delivery fee per day (only delivered/completed)
+    daily_delivery_fees = {}
+    for o in weekly_orders.filter(status__in=VALID_STATUSES):
+        day = o.created_at.date()
+        daily_delivery_fees[day] = daily_delivery_fees.get(day, 0) + float(o.delivery_fee)
+
+    revenue_trend = [
+        {
+            'day': item['day'].strftime('%Y-%m-%d'),
+            'revenue': float(item['revenue'] or 0) + daily_delivery_fees.get(item['day'], 0),
+            'orders': item['orders']
+        }
+        for item in weekly_items
+    ]
+
+    return JsonResponse({
+        'success': True,
+        'today_orders_count': today_orders.count(),
+        'today_revenue': today_revenue,
+        'pending_orders': pending_orders,
+        'out_for_delivery': out_for_delivery,
+        'revenue_trend': revenue_trend
+    })
+
 
 # ==================== ORDER MANAGEMENT ====================
 
@@ -392,63 +437,24 @@ def get_payment_details(request, order_number):
 @staff_member_required(login_url='admin_login')
 def liquor_dashboard(request):
     """Liquor store admin dashboard"""
-    # Check if this is an AJAX request for data refresh
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        today = timezone.now().date()
-
-        # Today's liquor statistics
-        today_orders = Order.objects.filter(
-            created_at__date=today,
-            items__food_item__store_type='liquor'
-        ).distinct()
-        today_revenue = OrderItem.objects.filter(
-            order__created_at__date=today,
-            food_item__store_type='liquor'
-        ).aggregate(total=Sum('price_at_order'))['total'] or 0
-        pending_orders = Order.objects.filter(
-            status='pending',
-            items__food_item__store_type='liquor'
-        ).distinct().count()
-        out_for_delivery = Order.objects.filter(
-            status='out_for_delivery',
-            items__food_item__store_type='liquor'
-        ).distinct().count()
-
-        # This week's liquor stats for revenue trend
-        week_start = today - timedelta(days=today.weekday())
-        weekly_orders = Order.objects.filter(
-            created_at__date__gte=week_start,
-            items__food_item__store_type='liquor'
-        ).distinct()
-        revenue_trend = OrderItem.objects.filter(
-            order__created_at__date__gte=week_start,
-            food_item__store_type='liquor'
-        ).annotate(day=TruncDate('order__created_at')).values('day').annotate(
-            revenue=Sum('price_at_order'),
-            orders=Count('order', distinct=True)
-        ).order_by('day')
-
-        return JsonResponse({
-            'success': True,
-            'today_orders_count': today_orders.count(),
-            'today_revenue': float(today_revenue),
-            'pending_orders': pending_orders,
-            'out_for_delivery': out_for_delivery,
-            'daily_revenue': list(revenue_trend)
-        })
-
-    # Regular page load
     today = timezone.now().date()
 
-    # Today's liquor statistics
-    today_orders = Order.objects.filter(
+    # Delivered/completed liquor orders for revenue calculation
+    delivered_orders = Order.objects.filter(
         created_at__date=today,
+        status__in=['delivered', 'completed'],
         items__food_item__store_type='liquor'
     ).distinct()
-    today_revenue = OrderItem.objects.filter(
-        order__created_at__date=today,
+
+    # Today's revenue (items + delivery fees)
+    today_items_revenue = OrderItem.objects.filter(
+        order__in=delivered_orders,
         food_item__store_type='liquor'
-    ).aggregate(total=Sum('price_at_order'))['total'] or 0
+    ).aggregate(revenue=Sum('price_at_order'))['revenue'] or 0
+    today_delivery_fee = delivered_orders.aggregate(fee=Sum('delivery_fee'))['fee'] or 0
+    today_revenue = float(today_items_revenue + today_delivery_fee)
+
+    # Pending and out-for-delivery orders (all liquor orders, not yet delivered)
     pending_orders = Order.objects.filter(
         status='pending',
         items__food_item__store_type='liquor'
@@ -462,9 +468,10 @@ def liquor_dashboard(request):
         items__food_item__store_type='liquor'
     ).distinct().count()
 
-    # Popular liquor items today
+    # Popular liquor items today (delivered only)
     popular_today = OrderItem.objects.filter(
         order__created_at__date=today,
+        order__status__in=['delivered', 'completed'],
         food_item__store_type='liquor'
     ).values(
         'food_item__name'
@@ -473,42 +480,48 @@ def liquor_dashboard(request):
         total_revenue=Sum('price_at_order')
     ).order_by('-total_quantity')[:5]
 
-    # This week's liquor stats
+    # Weekly delivered/completed orders
     week_start = today - timedelta(days=today.weekday())
     weekly_orders = Order.objects.filter(
         created_at__date__gte=week_start,
+        status__in=['delivered', 'completed'],
         items__food_item__store_type='liquor'
     ).distinct()
-    weekly_revenue = OrderItem.objects.filter(
-        order__created_at__date__gte=week_start,
+
+    weekly_items_revenue = OrderItem.objects.filter(
+        order__in=weekly_orders,
         food_item__store_type='liquor'
     ).aggregate(total=Sum('price_at_order'))['total'] or 0
+    weekly_delivery_fee = weekly_orders.aggregate(total=Sum('delivery_fee'))['total'] or 0
+    weekly_revenue = float(weekly_items_revenue + weekly_delivery_fee)
     weekly_order_count = weekly_orders.count()
     average_order_value = weekly_revenue / weekly_order_count if weekly_order_count > 0 else 0
-    revenue_trend = OrderItem.objects.filter(
-        order__created_at__date__gte=week_start,
-        food_item__store_type='liquor'
-    ).annotate(day=TruncDate('order__created_at')).values('day').annotate(
-        daily_revenue=Sum('price_at_order'),
-        order_count=Count('order', distinct=True)
+
+    # Revenue trend (daily) including delivery fee
+    revenue_trend = weekly_orders.annotate(day=TruncDate('created_at')).values('day').annotate(
+        items_revenue=Sum('items__price_at_order'),
+        delivery_fee=Sum('delivery_fee'),
+        daily_revenue=F('items_revenue') + F('delivery_fee'),
+        order_count=Count('id')
     ).order_by('day')
 
-    # Peak hours (last 7 days) for liquor orders
+    # Peak hours (last 7 days, delivered/completed only)
     peak_hours = Order.objects.filter(
         created_at__gte=timezone.now() - timedelta(days=7),
+        status__in=['delivered', 'completed'],
         items__food_item__store_type='liquor'
     ).distinct().annotate(hour=ExtractHour('created_at')).values('hour').annotate(
         order_count=Count('id')
     ).order_by('-order_count')[:5]
 
     context = {
-        'today_orders_count': today_orders.count(),
+        'today_orders_count': delivered_orders.count(),
         'today_revenue': today_revenue,
         'pending_orders': pending_orders,
         'preparing_orders': preparing_orders,
         'out_for_delivery': out_for_delivery,
         'popular_today': popular_today,
-        'weekly_orders': weekly_orders.count(),
+        'weekly_orders': weekly_order_count,
         'weekly_revenue': weekly_revenue,
         'average_order_value': average_order_value,
         'peak_hours': peak_hours,
@@ -517,6 +530,7 @@ def liquor_dashboard(request):
     }
 
     return render(request, 'custom_admin/liquor_dashboard.html', context)
+
 
 @staff_member_required(login_url='admin_login')
 def liquor_orders(request):
@@ -544,18 +558,22 @@ def liquor_orders(request):
 @staff_member_required(login_url='admin_login')
 def liquor_analytics(request):
     """Liquor analytics and reports"""
-    # Date range
     days = int(request.GET.get('days', 7))
     start_date = timezone.now() - timedelta(days=days)
 
-    # Liquor revenue over time
-    daily_revenue = OrderItem.objects.filter(
-        order__created_at__gte=start_date,
-        food_item__store_type='liquor',
-        order__status='delivered'
-    ).annotate(day=TruncDate('order__created_at')).values('day').annotate(
-        revenue=Sum('price_at_order'),
-        orders=Count('order', distinct=True)
+    # Delivered/completed liquor orders in the period
+    delivered_orders = Order.objects.filter(
+        created_at__gte=start_date,
+        status__in=['delivered', 'completed'],
+        items__food_item__store_type='liquor'
+    ).distinct()
+
+    # Daily revenue (items + delivery fees)
+    daily_revenue = delivered_orders.annotate(day=TruncDate('created_at')).values('day').annotate(
+        items_revenue=Sum('items__price_at_order'),
+        delivery_fee=Sum('delivery_fee'),
+        revenue=F('items_revenue') + F('delivery_fee'),
+        orders=Count('id')
     ).order_by('day')
 
     # Top selling liquor items
@@ -572,11 +590,7 @@ def liquor_analytics(request):
     ).order_by('-total_quantity')[:10]
 
     # Top liquor customers
-    top_customers = Order.objects.filter(
-        created_at__gte=start_date,
-        status='delivered',
-        items__food_item__store_type='liquor'
-    ).distinct().values(
+    top_customers = delivered_orders.values(
         'user__username',
         'user__phone_number'
     ).annotate(
@@ -584,47 +598,32 @@ def liquor_analytics(request):
         total_spent=Sum('total')
     ).order_by('-total_orders')[:10]
 
-    # Liquor order status distribution
+    # Liquor order status distribution (all statuses)
     status_distribution = Order.objects.filter(
         created_at__gte=start_date,
         items__food_item__store_type='liquor'
-    ).distinct().values('status').annotate(
+    ).values('status').annotate(
         count=Count('id')
-    )
+    ).order_by('status')
 
-    # Calculate totals
+    # Totals
     total_revenue = sum(float(item['revenue'] or 0) for item in daily_revenue)
     total_orders = sum(item['orders'] for item in daily_revenue)
     avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
 
-    # Peak hours for liquor orders
-    peak_hours = Order.objects.filter(
-        created_at__gte=start_date,
-        items__food_item__store_type='liquor'
-    ).distinct().annotate(hour=ExtractHour('created_at')).values('hour').annotate(
+    # Peak hours (last X days, delivered/completed)
+    peak_hours = delivered_orders.annotate(hour=ExtractHour('created_at')).values('hour').annotate(
         order_count=Count('id')
     ).order_by('-order_count')[:10]
 
-    # Liquor-specific metrics
-    liquor_orders = Order.objects.filter(
-        created_at__gte=start_date,
-        items__food_item__store_type='liquor'
-    ).distinct()
-
-    liquor_revenue = OrderItem.objects.filter(
-        order__created_at__gte=start_date,
-        food_item__store_type='liquor'
-    ).aggregate(total=Sum('price_at_order'))['total'] or 0
-
+    # Liquor metrics
+    liquor_orders = delivered_orders
+    liquor_revenue = total_revenue
     liquor_items_sold = OrderItem.objects.filter(
-        order__created_at__gte=start_date,
+        order__in=delivered_orders,
         food_item__store_type='liquor'
     ).aggregate(total=Sum('quantity'))['total'] or 0
-
-    # Top selling liquor items (already calculated above)
     top_liquor_items = top_items
-
-    # Liquor revenue trend (already calculated above)
     liquor_daily_revenue = daily_revenue
 
     context = {
@@ -789,23 +788,25 @@ def edit_category(request):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 @staff_member_required(login_url='admin_login')
+@require_POST
 def delete_category(request):
-    """Delete a food category"""
-    if request.method == 'POST':
+    try:
         data = json.loads(request.body)
         category_id = data.get('id')
 
         if not category_id:
-            return JsonResponse({'success': False, 'message': 'Category ID is required'})
+            return JsonResponse({'success': False, 'message': 'Category ID is required'}, status=400)
 
-        category = get_object_or_404(FoodCategory, id=category_id)
+        try:
+            category = FoodCategory.objects.get(id=category_id)
+        except FoodCategory.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Category not found'}, status=404)
 
-        # Check if category has food items
-        if category.fooditem_set.exists():
+        if category.items.exists():
             return JsonResponse({
                 'success': False,
                 'message': 'Cannot delete category with existing food items. Please move or delete the items first.'
-            })
+            }, status=400)
 
         category_name = category.name
         category.delete()
@@ -815,7 +816,12 @@ def delete_category(request):
             'message': f'Category "{category_name}" deleted successfully'
         })
 
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
 
 @staff_member_required(login_url='admin_login')
 def add_food_item(request):
@@ -899,16 +905,20 @@ def edit_food_item(request):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 @staff_member_required(login_url='admin_login')
+@require_POST
 def delete_food_item(request):
-    """Delete a food item"""
-    if request.method == 'POST':
+    try:
         data = json.loads(request.body)
         item_id = data.get('id')
 
         if not item_id:
-            return JsonResponse({'success': False, 'message': 'Food item ID is required'})
+            return JsonResponse({'success': False, 'message': 'Food item ID is required'}, status=400)
 
-        food_item = get_object_or_404(FoodItem, id=item_id)
+        try:
+            food_item = FoodItem.objects.get(id=item_id)
+        except FoodItem.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Food item not found'}, status=404)
+
         item_name = food_item.name
         food_item.delete()
 
@@ -917,7 +927,11 @@ def delete_food_item(request):
             'message': f'Food item "{item_name}" deleted successfully'
         })
 
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 # ==================== ANALYTICS ====================
 

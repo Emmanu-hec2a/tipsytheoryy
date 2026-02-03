@@ -208,64 +208,6 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
-<!-- <div class="admin-card">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-lg-4 col-md-6">
-                <a href="{% url 'liquor_orders' %}?status=pending" class="quick-action-card">
-                    <div class="icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="title">View Pending</div>
-                </a>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <a href="{% url 'liquor_orders' %}?status=preparing" class="quick-action-card">
-                    <div class="icon">
-                        <i class="fas fa-utensils"></i>
-                    </div>
-                    <div class="title">Preparing</div>
-                </a>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <a href="{% url 'liquor_orders' %}?status=out_for_delivery" class="quick-action-card">
-                    <div class="icon">
-                        <i class="fas fa-truck"></i>
-                    </div>
-                    <div class="title">Out for Delivery</div>
-                </a>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <a href="{% url 'admin_liquor' %}" class="quick-action-card">
-                    <div class="icon">
-                        <i class="fas fa-plus-circle"></i>
-                    </div>
-                    <div class="title">Manage Liquor Menu</div>
-                </a>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <a href="{% url 'liquor_analytics' %}" class="quick-action-card">
-                    <div class="icon">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div class="title">View Analytics</div>
-                </a>
-            </div>
-            <div class="col-lg-4 col-md-6">
-                <a href="{% url 'admin_dashboard' %}" class="quick-action-card">
-                    <div class="icon">
-                        <i class="fas fa-arrow-left"></i>
-                    </div>
-                    <div class="title">Back to Main Dashboard</div>
-                </a>
-            </div>
-        </div>
-    </div>
-</div> -->
 {% endblock %}
 
 {% block extra_js %}
@@ -303,7 +245,7 @@ function initializeCharts() {
                 return;
             }
 
-            const revenueData = data.daily_revenue;
+            const revenueData = data.revenue_trend;
 
             if (revenueChart) {
                 revenueChart.destroy();
@@ -466,3 +408,4 @@ function updateStatsCards(data) {
 }
 </script>
 {% endblock %}
+

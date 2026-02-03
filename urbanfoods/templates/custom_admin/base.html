@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
 
-    <meta name="description" content="Urban Dreams Café Admin System">
+    <meta name="description" content="TipsyTheoryy Admin System">
     <meta name="author" content="Tipsy Theoryy">
 
     <!-- Bootstrap CSS -->
@@ -708,7 +708,7 @@
                     <i class="fas fa-bars fa-lg"></i>
                 </button> -->
                 <h4 class="text-white mb-0">
-                    <i class="fas fa-utensils me-2"></i>
+                    <i class="fas fa-wine-bottle me-2"></i>
                     TipsyTheoryy
                 </h4>
                 <small class="text-white-50">Admin Panel</small>
@@ -973,12 +973,12 @@
             const list = document.getElementById('notificationList');
             if (orders.length > 0) {
                 const items = orders.slice(0, 5).map(order => `
-                    <li><a class="dropdown-item" href="/admin-panel/orders/${order.order_number}/">
+                    <li><a class="dropdown-item" href="/admin-panel/liquor/orders/${order.order_number}/">
                         <small><strong>New Order:</strong> ${order.order_number}</small><br>
                         <small class="text-muted">${order.user} - KES ${order.total}</small>
                     </a></li>
                 `).join('');
-                list.innerHTML = items + '<li><hr class="dropdown-divider"></li><li><a class="dropdown-item text-center" href="/admin-panel/orders/">View All Orders</a></li>';
+                list.innerHTML = items + '<li><hr class="dropdown-divider"></li><li><a class="dropdown-item text-center" href="/admin-panel/liquor/orders/">View All Orders</a></li>';
             }
         }
 
@@ -997,7 +997,7 @@
         function playNotificationSound() {
             // Create audio element for notification sound
             const audio = new Audio('/static/images/notification.mp3');
-            audio.volume = 0.7;
+            audio.volume = 0.5;
 
             // Fallback to beep if audio file doesn't exist
             audio.addEventListener('error', function() {
