@@ -54,131 +54,166 @@ Payment Status: {order.payment_status.upper()}
 Estimated Delivery: {order.estimated_delivery.strftime('%I:%M %p')}
 
 View order details at:
-https://urbandreamcafe.up.railway.app/admin-panel/orders/
+https://tipsytheoryy.com/admin-panel/orders/
 
 ---
-UrbanDreams Cafe Admin System
+TipsyTheoryy Admin System
     '''
     
     # HTML version
     items_html = "".join([
         f'''
         <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">{item.food_item.name}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">{item.quantity}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">KES {item.price_at_order}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">KES {item.quantity * item.price_at_order}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #e5e7eb;">{item.food_item.name}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; color: #e5e7eb;">{item.quantity}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; color: #e5e7eb;">KES {item.price_at_order}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; font-weight: bold; color: #fbbf24;">KES {item.quantity * item.price_at_order}</td>
         </tr>
         '''
         for item in order.items.all()
     ])
-    
+
     html_message = f'''
     <html>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <div style="max-width: 650px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px 10px 0 0;">
-                <h2 style="color: white; margin: 0;">🔔 New Order Received!</h2>
-            </div>
-            
-            <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="background-color: #f0f4ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3 style="color: #667eea; margin: 0 0 10px 0;">Order #{order.order_number}</h3>
-                    <p style="margin: 5px 0;"><strong>Store:</strong> {order.store_type.upper()}</p>
-                    <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">{order.status.upper()}</span></p>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #e5e7eb;
+            }}
+            .glassmorphism {{
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                border-radius: 16px;
+            }}
+            .gradient-header {{
+                background: linear-gradient(135deg, #ea580c, #dc2626);
+                border-radius: 16px 16px 0 0;
+            }}
+            .modern-table {{
+                border-collapse: collapse;
+                width: 100%;
+                margin: 20px 0;
+                border-radius: 12px;
+                overflow: hidden;
+            }}
+            .modern-table th {{
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 15px;
+                text-align: left;
+                font-weight: 600;
+                color: #fbbf24;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            .modern-btn {{
+                display: inline-block;
+                padding: 15px 30px;
+                background: linear-gradient(135deg, #ea580c, #dc2626);
+                color: white;
+                text-decoration: none;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 16px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+            }}
+            .modern-btn:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(234, 88, 12, 0.6);
+            }}
+            .info-card {{
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 20px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <div style="max-width: 700px; margin: 20px auto; padding: 20px;">
+            <div class="glassmorphism">
+                <div class="gradient-header" style="padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">🔔 New Order Alert!</h1>
+                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Fresh order just came in</p>
                 </div>
 
-                <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Customer Information</h3>
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Name:</strong></td>
-                        <td style="padding: 8px 0;">{order.user.get_full_name() or order.user.username}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Email:</strong></td>
-                        <td style="padding: 8px 0;">{order.user.email}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Phone:</strong></td>
-                        <td style="padding: 8px 0;">{order.phone_number}</td>
-                    </tr>
-                </table>
+                <div style="padding: 30px;">
+                    <div class="info-card">
+                        <h2 style="color: #fbbf24; margin: 0 0 15px 0; font-size: 22px;">Order #{order.order_number}</h2>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div><strong style="color: #e5e7eb;">Store:</strong> <span style="color: #60a5fa;">{order.store_type.upper()}</span></div>
+                            <div><strong style="color: #e5e7eb;">Status:</strong> <span style="color: #fbbf24; font-weight: bold;">{order.status.upper()}</span></div>
+                        </div>
+                    </div>
 
-                <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Delivery Details</h3>
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Hostel:</strong></td>
-                        <td style="padding: 8px 0;">{order.hostel}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Room Number:</strong></td>
-                        <td style="padding: 8px 0;">{order.room_number}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Notes:</strong></td>
-                        <td style="padding: 8px 0;">{order.delivery_notes or 'None'}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Estimated Delivery:</strong></td>
-                        <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">15 mins</td>
-                    </tr>
-                </table>
+                    <h3 style="color: #60a5fa; margin: 30px 0 15px 0; font-size: 18px; border-bottom: 2px solid #60a5fa; padding-bottom: 8px;">👤 Customer Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><strong style="color: #e5e7eb;">Name:</strong><br>{order.user.get_full_name() or order.user.username}</div>
+                        <div><strong style="color: #e5e7eb;">Email:</strong><br>{order.user.email}</div>
+                        <div><strong style="color: #e5e7eb;">Phone:</strong><br>{order.phone_number}</div>
+                        <div><strong style="color: #e5e7eb;">Hostel:</strong><br>{order.hostel}</div>
+                    </div>
 
-                <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Order Items</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="background-color: #f8f9fa;">
-                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #667eea;">Item</th>
-                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #667eea;">Qty</th>
-                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #667eea;">Price</th>
-                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #667eea;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items_html}
-                        <tr style="background-color: #f8f9fa; font-weight: bold;">
-                            <td colspan="3" style="padding: 10px; text-align: right; border-top: 2px solid #667eea;">Subtotal:</td>
-                            <td style="padding: 10px; text-align: right; border-top: 2px solid #667eea;">KES {order.subtotal}</td>
-                        </tr>
-                        <tr style="background-color: #f8f9fa;">
-                            <td colspan="3" style="padding: 10px; text-align: right;">Delivery Fee:</td>
-                            <td style="padding: 10px; text-align: right;">KES {order.delivery_fee}</td>
-                        </tr>
-                        <tr style="background-color: #667eea; color: white; font-size: 1.1em;">
-                            <td colspan="3" style="padding: 12px; text-align: right;"><strong>TOTAL:</strong></td>
-                            <td style="padding: 12px; text-align: right;"><strong>KES {order.total}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <h3 style="color: #60a5fa; margin: 30px 0 15px 0; font-size: 18px; border-bottom: 2px solid #60a5fa; padding-bottom: 8px;">📍 Delivery Info</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><strong style="color: #e5e7eb;">Room:</strong><br>{order.room_number}</div>
+                        <div><strong style="color: #e5e7eb;">Notes:</strong><br>{order.delivery_notes or 'None'}</div>
+                        <div><strong style="color: #e5e7eb;">ETA:</strong><br><span style="color: #34d399; font-weight: bold;">15 mins</span></div>
+                        <div><strong style="color: #e5e7eb;">Payment:</strong><br><span style="color: #fbbf24;">{order.payment_method.upper()}</span></div>
+                    </div>
 
-                <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Payment Information</h3>
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Payment Method:</strong></td>
-                        <td style="padding: 8px 0;">{order.payment_method.upper()}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Payment Type:</strong></td>
-                        <td style="padding: 8px 0;">{order.payment_type.upper()}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Payment Status:</strong></td>
-                        <td style="padding: 8px 0;"><span style="color: #f59e0b; font-weight: bold;">{order.payment_status.upper()}</span></td>
-                    </tr>
-                </table>
-                
-                <div style="margin-top: 30px; text-align: center;">
-                    <a href="https://urbandreamcafe.up.railway.app/admin-panel/orders/" 
-                       style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                              color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
-                        View All Orders →
-                    </a>
+                    <h3 style="color: #60a5fa; margin: 30px 0 15px 0; font-size: 18px; border-bottom: 2px solid #60a5fa; padding-bottom: 8px;">🛒 Order Items</h3>
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Price</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items_html}
+                            <tr style="background: rgba(255,255,255,0.05);">
+                                <td colspan="3" style="padding: 15px; text-align: right; font-weight: bold; color: #e5e7eb;">Subtotal:</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; color: #fbbf24;">KES {order.subtotal}</td>
+                            </tr>
+                            <tr style="background: rgba(255,255,255,0.05);">
+                                <td colspan="3" style="padding: 15px; text-align: right; color: #e5e7eb;">Delivery Fee:</td>
+                                <td style="padding: 15px; text-align: right; color: #e5e7eb;">KES {order.delivery_fee}</td>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #ea580c, #dc2626); color: white;">
+                                <td colspan="3" style="padding: 18px; text-align: right; font-size: 18px; font-weight: bold;">TOTAL:</td>
+                                <td style="padding: 18px; text-align: right; font-size: 18px; font-weight: bold;">KES {order.total}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="https://tipsytheoryy.com/admin-panel/orders/" class="modern-btn">
+                            📊 View All Orders →
+                        </a>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin: 0;">
+                            Tipsy Theoryy Admin System<br>
+                            Sent {timezone.localtime(timezone.now()).strftime('%B %d, %Y at %I:%M %p')}
+                        </p>
+                    </div>
                 </div>
-                
-                <p style="margin-top: 30px; color: #718096; font-size: 12px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                    This is an automated notification from UrbanDreams Cafe Admin System<br>
-                    Sent at {timezone.localtime(timezone.now()).strftime('%B %d, %Y at %I:%M %p')}
-                </p>
             </div>
         </div>
     </body>
@@ -276,132 +311,200 @@ Estimated Delivery: {
 {payment_instructions}
 
 You can track your order status at:
-https://urbandreamcafe.up.railway.app/orders/
+https://tipsytheoryy/orders/
 
-If you have any questions, please contact us | Call 0743486638/.
+If you have any questions, please contact us | Call 0110345054.
 
-Thank you for choosing UrbanDreams Cafe!
+Thank you for choosing Tipsy Theoryy!
 
 ---
-UrbanDreams Cafe
+Tipsy Theoryy
     '''
     
     # HTML version
     items_html = "".join([
         f'''
         <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #eee;">{item.food_item.name}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">{item.quantity}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">KES {item.price_at_order}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">KES {item.quantity * item.price_at_order}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #e5e7eb;">{item.food_item.name}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; color: #e5e7eb;">{item.quantity}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; color: #e5e7eb;">KES {item.price_at_order}</td>
+            <td style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: right; font-weight: bold; color: #fbbf24;">KES {item.quantity * item.price_at_order}</td>
         </tr>
         '''
         for item in order.items.all()
     ])
-    
-    # payment_html = ""
-    # if order.payment_method == 'cash':
-    #     payment_type = "Till" if order.store_type == 'liquor' else "Till Number"
-    #     payment_number = "8330098 - NETWIX" if order.store_type == 'liquor' else "6960814 - MOSES ONKUNDI ATINDA"
-    #     payment_html = f'''
-    #     <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
-    #         <h3 style="color: #856404; margin-top: 0;">⚠️ Payment Required</h3>
-    #         <p style="margin: 10px 0;"><strong>Please complete payment using M-PESA {payment_type}:</strong></p>
-    #         <p style="margin: 5px 0; font-size: 1.1em;"><strong>{payment_type}:</strong> <span style="color: #667eea; font-size: 1.3em; font-weight: bold;">{payment_number}</span></p>
-    #         {"<p style='margin: 5px 0;'><strong>Account Number:</strong> " + order.order_number + "</p>" if order.store_type == 'liquor' else ""}
-    #         <p style="margin: 5px 0;"><strong>Amount:</strong> <span style="color: #22c55e; font-size: 1.2em; font-weight: bold;">KES {order.total}</span></p>
-    #         <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #856404;">Your order will be processed once payment is confirmed by our team.</p>
-    #     </div>
-    #     '''
-    
+
+    payment_html = ""
+    if order.payment_method == 'cash':
+        payment_type = "Paybill" if order.store_type == 'liquor' else "Till Number"
+        payment_number = "8330098 - NETWIX" if order.store_type == 'liquor' else "6960814 - MOSES ONKUNDI ATINDA"
+        account_info = f'<p style="margin: 5px 0; color: #e5e7eb;"><strong>Account Number:</strong> {order.order_number}</p>' if order.store_type == 'liquor' else ""
+        payment_html = f'''
+        <div class="info-card" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #fbbf24; margin: 0 0 15px 0; font-size: 18px;">💳 Payment Required</h3>
+            <p style="margin: 10px 0; color: #e5e7eb;"><strong>Please complete payment using M-PESA {payment_type}:</strong></p>
+            <p style="margin: 5px 0; font-size: 1.2em; color: #60a5fa; font-weight: bold;">{payment_number}</p>
+            {account_info}
+            <p style="margin: 5px 0; color: #e5e7eb;"><strong>Amount:</strong> <span style="color: #34d399; font-size: 1.3em; font-weight: bold;">KES {order.total}</span></p>
+            <p style="margin: 10px 0 0 0; font-size: 0.9em; color: rgba(255,255,255,0.7);">Your order will be processed once payment is confirmed by our team.</p>
+        </div>
+        '''
+
     html_message = f'''
     <html>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <div style="max-width: 650px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 10px 10px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0;">Order Confirmed!</h1>
-                <p style="color: white; margin: 10px 0 0 0; font-size: 1.1em;">Thank you for your order</p>
-            </div>
-            
-            <div style="background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                <p style="font-size: 1.1em; margin-top: 0;">Hi <strong>{order.user.get_full_name() or order.user.username}</strong>,</p>
-                <p>Your order has been received and is being processed. Here are your order details:</p>
-
-                <div style="background-color: #f0f4ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="color: #667eea; margin: 0 0 10px 0;">Order #{order.order_number}</h3>
-                    <p style="margin: 5px 0;"><strong>Order Date:</strong> {timezone.localtime(order.created_at).strftime('%B %d, %Y at %I:%M %p')}</p>
-                    <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">{order.status.upper()}</span></p>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                color: #e5e7eb;
+            }}
+            .glassmorphism {{
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                border-radius: 16px;
+            }}
+            .gradient-header {{
+                background: linear-gradient(135deg, #ea580c, #dc2626);
+                border-radius: 16px 16px 0 0;
+            }}
+            .modern-table {{
+                border-collapse: collapse;
+                width: 100%;
+                margin: 20px 0;
+                border-radius: 12px;
+                overflow: hidden;
+            }}
+            .modern-table th {{
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                padding: 15px;
+                text-align: left;
+                font-weight: 600;
+                color: #fbbf24;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            .modern-btn {{
+                display: inline-block;
+                padding: 15px 30px;
+                background: linear-gradient(135deg, #ea580c, #dc2626);
+                color: white;
+                text-decoration: none;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 16px;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+            }}
+            .modern-btn:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(234, 88, 12, 0.6);
+            }}
+            .info-card {{
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 20px 0;
+            }}
+            .help-card {{
+                background: rgba(59, 130, 246, 0.1);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(59, 130, 246, 0.2);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 20px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <div style="max-width: 700px; margin: 20px auto; padding: 20px;">
+            <div class="glassmorphism">
+                <div class="gradient-header" style="padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">🎉 Order Confirmed!</h1>
+                    <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Thank you for choosing Tipsy Theoryy</p>
                 </div>
 
-                <!--
-                <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Delivery Information</h3>
-                <table style="width: 100%; margin-bottom: 20px;">
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Hostel:</strong></td>
-                        <td style="padding: 8px 0;">{order.hostel}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Room Number:</strong></td>
-                        <td style="padding: 8px 0;">{order.room_number}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Phone:</strong></td>
-                        <td style="padding: 8px 0;">{order.phone_number}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px 0;"><strong>Estimated Delivery:</strong></td>
-                        <td style="padding: 8px 0; color: #22c55e; font-weight: bold; font-size: 1.1em;">15 mins</td>
-                    </tr>
-                </table>
-                -->
+                <div style="padding: 30px;">
+                    <p style="font-size: 18px; margin: 0 0 20px 0; color: #e5e7eb;">Hi <strong style="color: #fbbf24;">{order.user.get_full_name() or order.user.username}</strong>,</p>
+                    <p style="color: rgba(255,255,255,0.8); margin: 0 0 30px 0; line-height: 1.6;">Your order has been received and is being processed. Here are your order details:</p>
 
-                <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Order Summary</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    <thead>
-                        <tr style="background-color: #f8f9fa;">
-                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #667eea;">Item</th>
-                            <th style="padding: 10px; text-align: center; border-bottom: 2px solid #667eea;">Qty</th>
-                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #667eea;">Price</th>
-                            <th style="padding: 10px; text-align: right; border-bottom: 2px solid #667eea;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items_html}
-                        <tr style="background-color: #f8f9fa; font-weight: bold;">
-                            <td colspan="3" style="padding: 10px; text-align: right; border-top: 2px solid #667eea;">Subtotal:</td>
-                            <td style="padding: 10px; text-align: right; border-top: 2px solid #667eea;">KES {order.subtotal}</td>
-                        </tr>
-                        <tr style="background-color: #f8f9fa;">
-                            <td colspan="3" style="padding: 10px; text-align: right;">Delivery Fee:</td>
-                            <td style="padding: 10px; text-align: right;">KES {order.delivery_fee}</td>
-                        </tr>
-                        <tr style="background-color: #667eea; color: white; font-size: 1.1em;">
-                            <td colspan="3" style="padding: 12px; text-align: right;"><strong>TOTAL:</strong></td>
-                            <td style="padding: 12px; text-align: right;"><strong>KES {order.total}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
+                    <div class="info-card">
+                        <h2 style="color: #fbbf24; margin: 0 0 15px 0; font-size: 22px;">Order #{order.order_number}</h2>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div><strong style="color: #e5e7eb;">Date:</strong> <span style="color: #60a5fa;">{timezone.localtime(order.created_at).strftime('%B %d, %Y')}</span></div>
+                            <div><strong style="color: #e5e7eb;">Time:</strong> <span style="color: #60a5fa;">{timezone.localtime(order.created_at).strftime('%I:%M %p')}</span></div>
+                            <div><strong style="color: #e5e7eb;">Status:</strong> <span style="color: #fbbf24; font-weight: bold;">{order.status.upper()}</span></div>
+                        </div>
+                    </div>
 
-                <p style="margin: 20px 0;"><strong>Payment Method:</strong> {order.payment_method.upper()}</p>
-                
-                <div style="margin: 30px 0; text-align: center;">
-                    <a href="https://urbandreamcafe.up.railway.app/orders/" 
-                       style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                              color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 1.1em;">
-                        Track Your Order →
-                    </a>
+                    <h3 style="color: #60a5fa; margin: 30px 0 15px 0; font-size: 18px; border-bottom: 2px solid #60a5fa; padding-bottom: 8px;">📍 Delivery Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div><strong style="color: #e5e7eb;">Hostel:</strong><br>{order.hostel}</div>
+                        <div><strong style="color: #e5e7eb;">Room:</strong><br>{order.room_number}</div>
+                        <div><strong style="color: #e5e7eb;">Phone:</strong><br>{order.phone_number}</div>
+                        <div><strong style="color: #e5e7eb;">ETA:</strong><br><span style="color: #34d399; font-weight: bold;">15 mins</span></div>
+                    </div>
+
+                    <h3 style="color: #60a5fa; margin: 30px 0 15px 0; font-size: 18px; border-bottom: 2px solid #60a5fa; padding-bottom: 8px;">🛒 Order Items</h3>
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Price</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items_html}
+                            <tr style="background: rgba(255,255,255,0.05);">
+                                <td colspan="3" style="padding: 15px; text-align: right; font-weight: bold; color: #e5e7eb;">Subtotal:</td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; color: #fbbf24;">KES {order.subtotal}</td>
+                            </tr>
+                            <tr style="background: rgba(255,255,255,0.05);">
+                                <td colspan="3" style="padding: 15px; text-align: right; color: #e5e7eb;">Delivery Fee:</td>
+                                <td style="padding: 15px; text-align: right; color: #e5e7eb;">KES {order.delivery_fee}</td>
+                            </tr>
+                            <tr style="background: linear-gradient(135deg, #ea580c, #dc2626); color: white;">
+                                <td colspan="3" style="padding: 18px; text-align: right; font-size: 18px; font-weight: bold;">TOTAL:</td>
+                                <td style="padding: 18px; text-align: right; font-size: 18px; font-weight: bold;">KES {order.total}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="margin: 20px 0; color: #e5e7eb;"><strong>Payment Method:</strong> <span style="color: #fbbf24;">{order.payment_method.upper()}</span></div>
+
+                    {payment_html}
+
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="https://tipsytheoryy.com/orders/" class="modern-btn">
+                            📍 Track Your Order →
+                        </a>
+                    </div>
+
+                    <div class="help-card">
+                        <p style="margin: 0; color: #60a5fa; font-weight: 600; font-size: 16px;">💡 Need Help?</p>
+                        <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.8);">If you have any questions about your order, please contact our support team. | Call 0110345054</p>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin: 0;">
+                            Thank you for choosing Urban Dreams Cafe!<br>
+                            This email was sent to {order.user.email}<br>
+                            Sent {timezone.localtime(timezone.now()).strftime('%B %d, %Y at %I:%M %p')}
+                        </p>
+                    </div>
                 </div>
-
-                <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin-top: 20px; border-radius: 5px;">
-                    <p style="margin: 0; color: #1e40af;"><strong>💡 Need Help?</strong></p>
-                    <p style="margin: 5px 0 0 0; color: #1e40af;">If you have any questions about your order, please contact our support team. | Call 0743486638</p>
-                </div>
-                
-                <p style="margin-top: 30px; color: #718096; font-size: 12px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                    Thank you for choosing Urban Dreams Cafe!<br>
-                    This email was sent to {order.user.email}<br>
-                    Sent at {timezone.localtime(timezone.now()).strftime('%B %d, %Y at %I:%M %p')}
-                </p>
             </div>
         </div>
     </body>

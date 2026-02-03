@@ -139,11 +139,22 @@ def login_view(request):
     if request.method == 'POST':
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             data = json.loads(request.body)
-            username = data.get('username')
+            username_or_email = data.get('username')
             password = data.get('password')
             remember = data.get('remember', False)
 
-            user = authenticate(username=username, password=password)
+            user = None
+
+            # Check if input is an email
+            if '@' in username_or_email:
+                try:
+                    user_obj = User.objects.get(email=username_or_email)
+                    user = authenticate(username=user_obj.username, password=password)
+                except User.DoesNotExist:
+                    pass
+            else:
+                # Treat as username
+                user = authenticate(username=username_or_email, password=password)
 
             if user is not None:
                 login(request, user)
@@ -784,7 +795,6 @@ def check_order_payment_status(request, order_number):
             'payment_status': order.payment_status,
             'order_status': order.status,
             'mpesa_receipt_number': order.mpesa_receipt_number
-#         })
         })
     except Order.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)

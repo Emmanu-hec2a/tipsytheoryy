@@ -543,8 +543,8 @@
                 } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                     showError('Please enter a valid email address.');
                     isValid = false;
-                } else if (!/^07\d{8}$/.test(phone)) {
-                    showError('Please enter a valid phone number (07XXXXXXXX).');
+                } else if (!/^0[17]\d{8}$/.test(phone)) {
+                    showError('Please enter a valid phone number (07XXXXXXXX or 01XXXXXXXX).');
                     isValid = false;
                 }
             } else if (step === 2) {
@@ -615,7 +615,7 @@
             const phone = this.value.trim();
             const icon = this.parentElement.querySelector('.input-icon');
 
-            const phoneRegex = /^07\d{8}$/;
+            const phoneRegex = /^0[17]\d{8}$/;
             if (phone.length === 0) {
                 icon.className = 'fas fa-phone input-icon';
             } else if (phoneRegex.test(phone)) {
@@ -719,9 +719,9 @@
                 return;
             }
 
-            const phoneRegex = /^07\d{8}$/;
+            const phoneRegex = /^0[17]\d{8}$/;
             if (!phoneRegex.test(phone)) {
-                showError('Please enter a valid phone number (07XXXXXXXX).');
+                showError('Please enter a valid phone number (07XXXXXXXX or 01XXXXXXXX).');
                 hideLoadingModal();
                 return;
             }
