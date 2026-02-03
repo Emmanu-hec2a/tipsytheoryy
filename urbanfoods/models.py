@@ -66,39 +66,71 @@ class FoodItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def save(self, *args, **kwargs):
-    # Only process image on first save or when image changes
-        if self.image and not self.pk:
-            img = Image.open(self.image)
-
-            # Convert to RGB (PNG / transparency safe)
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-
-            # Resize
-            max_size = (800, 800)
-            img.thumbnail(max_size, Image.LANCZOS)
-
-            # Compress
-            buffer = BytesIO()
-            img.save(
-                buffer,
-                format="JPEG",
-                quality=88,
-                optimize=True,
-                progressive=True,
-                subsampling="4:4:4"   # IMPORTANT for label text
-            )
-            buffer.seek(0)
-
-            # IMPORTANT: strip directory name
-            filename = os.path.basename(self.image.name)
-
-            self.image.save(
-                filename,
-                ContentFile(buffer.read()),
-                save=False
-            )
-
+        # Flag to track if we need to optimize
+        should_optimize = False
+        
+        # Check if this is a NEW file upload (not just a path reference)
+        if self.image:
+            try:
+                # If image.file exists, it's a NEW upload
+                if hasattr(self.image, 'file') and hasattr(self.image.file, 'read'):
+                    should_optimize = True
+            except:
+                # If any error, it's probably an existing path reference
+                should_optimize = False
+        
+        # Only optimize if we detected a new file upload
+        if should_optimize:
+            try:
+                # Reset file pointer
+                self.image.file.seek(0)
+                
+                img = Image.open(self.image.file)
+                
+                # Convert to RGB (handles PNG transparency)
+                if img.mode in ("RGBA", "LA", "P"):
+                    background = Image.new("RGB", img.size, (255, 255, 255))
+                    if img.mode in ("RGBA", "LA"):
+                        background.paste(img, mask=img.split()[-1])
+                    else:
+                        background.paste(img)
+                    img = background
+                
+                # Resize if too large
+                max_size = (800, 800)
+                if img.width > max_size[0] or img.height > max_size[1]:
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                
+                # Compress
+                buffer = BytesIO()
+                img.save(
+                    buffer,
+                    format="JPEG",
+                    quality=75,
+                    optimize=True,
+                    progressive=True
+                    # No subsampling parameter
+                )
+                buffer.seek(0)
+                
+                # Get clean filename with .jpg extension
+                original_filename = os.path.basename(self.image.name)
+                filename_without_ext = os.path.splitext(original_filename)[0]
+                new_filename = f"{filename_without_ext}.jpg"
+                
+                # Save optimized image
+                self.image.save(
+                    new_filename,
+                    ContentFile(buffer.read()),
+                    save=False
+                )
+                
+                print(f"✅ Optimized NEW upload: {self.name} - {new_filename}")
+                
+            except Exception as e:
+                print(f"⚠️ Optimization skipped for {self.name}: {e}")
+        
+        # Save the model (won't re-trigger optimization because file is already saved)
         super().save(*args, **kwargs)
     
     @property

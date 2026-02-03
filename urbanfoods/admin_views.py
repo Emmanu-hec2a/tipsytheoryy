@@ -180,7 +180,7 @@ def admin_dashboard(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse(context)
 
-    return render(request, 'custom_admin/admin_dashboard.html', context)
+    return render(request, 'custom_admin/liqour_dashboard.html', context)
 
 @staff_member_required(login_url='admin_login')
 def admin_dashboard_stats(request):
