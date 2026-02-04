@@ -21,3 +21,147 @@ def send_push_to_all(title, body, url="/"):
             )
         except Exception as e:
             print("Push failed for subscription:", sub.endpoint, e)
+
+# utils.py
+import requests
+from django.conf import settings
+from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
+
+def format_phone(phone):
+    phone = phone.replace(" ", "")
+    if phone.startswith("0"):
+        phone = "+254" + phone[1:]
+    return phone
+
+
+def send_telegram_message(message, buttons=None):
+    try:
+        bot_token = settings.TELEGRAM_BOT_TOKEN
+        chat_id = settings.TELEGRAM_CHAT_ID
+
+        if not bot_token or not chat_id:
+            logger.warning("Telegram credentials not configured")
+            return False
+
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+        payload = {
+            'chat_id': chat_id,
+            'text': message,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
+
+        if buttons:
+            payload['reply_markup'] = json.dumps({
+                "inline_keyboard": buttons
+            })
+
+        response = requests.post(url, data=payload, timeout=10)
+
+        if response.status_code == 200:
+            logger.info("✅ Telegram message sent")
+            return True
+        else:
+            logger.error(f"❌ Telegram failed: {response.text}")
+            return False
+
+    except Exception as e:
+        logger.error(f"❌ Telegram error: {e}")
+        return False
+
+
+def notify_new_order(order):
+    try:
+        items_list = []
+        for item in order.items.all():
+            line_total = item.price_at_order * item.quantity
+            items_list.append(
+                f"  • {item.food_item.name} x{item.quantity} — KES {line_total}"
+            )
+
+        items_text = "\n".join(items_list) if items_list else "  No items"
+        customer_name = order.user.username if order.user else "N/A"
+
+        message = f"""
+🆕 <b>NEW ORDER RECEIVED!</b>
+
+📦 <b>Order #{order.order_number}</b>
+━━━━━━━━━━━━━━━━━━━━
+👤 <b>Customer:</b> {customer_name}
+📱 <b>Phone:</b> {order.phone_number or 'N/A'}
+🏠 <b>Location:</b> {order.hostel or 'N/A'}
+🚪 <b>Room:</b> {order.room_number or 'N/A'}
+
+📝 <b>Items:</b>
+{items_text}
+
+💵 <b>TOTAL:</b> KES {order.total}
+⏰ {timezone.localtime(order.created_at).strftime('%I:%M %p, %d %b %Y')}
+
+━━━━━━━━━━━━━━━━━━━━
+🔔 Awaiting payment confirmation
+        """.strip()
+
+        # ✅ Admin order link
+        admin_url = f"{settings.SITE_URL}/admin-panel/liquor/{order.order_number}/"
+
+        # ✅ Phone dialer link (works on Telegram mobile)
+        phone_number = phone_number = format_phone(order.phone_number) if order.phone_number else ""
+        phone_url = f"tel:{phone_number}" if phone_number else None
+
+        # ✅ Inline buttons
+        buttons = [
+            [
+                {"text": "View in Admin", "url": admin_url}
+            ]
+        ]
+
+        formatted_phone = format_phone(order.phone_number) if order.phone_number else "N/A"
+        # Optional WhatsApp button
+        if order.phone_number:
+            wa_url = f"https://wa.me/{formatted_phone.replace('+','')}"
+            buttons.append([
+                {"text": "WhatsApp Customer", "url": wa_url}
+            ])
+
+        return send_telegram_message(message, buttons=buttons)
+
+    except Exception as e:
+        logger.error(f"Error creating order notification: {e}")
+        return False
+
+
+def notify_payment_received(order):
+    customer_name = order.user.username if order.user else "N/A"
+
+    message = f"""
+✅ <b>PAYMENT CONFIRMED</b>
+
+📦 Order #{order.order_number}
+👤 {customer_name}
+💰 KES {order.total}
+
+Status: Ready for delivery 🚀
+    """.strip()
+
+    return send_telegram_message(message)
+
+
+def notify_order_delivered(order):
+    customer_name = order.user.username if order.user else "N/A"
+
+    message = f"""
+🎉 <b>ORDER DELIVERED</b>
+
+📦 Order #{order.order_number}
+👤 {customer_name}
+💰 KES {order.total}
+
+Status: Completed ✅
+    """.strip()
+
+    return send_telegram_message(message)

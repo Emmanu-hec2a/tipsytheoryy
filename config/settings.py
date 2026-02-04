@@ -23,6 +23,8 @@ ADMIN_SESSION_COOKIE_NAME = "admin_sessionid"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
+SITE_URL = os.environ.get('SITE_URL', 'https://tipsytheoryy.com')
+
 ALLOWED_HOSTS = ['192.168.48.227', 'localhost', '127.0.0.1', 'https://tipsytheoryy.com', 'https://liqour-tipsytheoryy.up.railway.app', '*']
 
 CSRF_TRUSTED_ORIGINS = [
@@ -167,6 +169,10 @@ SENDGRID_SANDBOX_MODE_IN_DEBUG = False
 SENDGRID_ECHO_TO_STDOUT = True
 ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_NOTIFICATION_EMAIL')
 IS_RAILWAY = os.environ.get("RAILWAY_ENVIRONMENT") is not None
+
+# Telegram Bot config
+TELEGRAM_BOT_TOKEN=os.environ.get('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID=os.environ.get('TELEGRAM_CHAT_ID')
 
 
 # REST Framework Configuration

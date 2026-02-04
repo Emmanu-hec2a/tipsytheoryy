@@ -260,7 +260,7 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         if not self.order_number:
             # Generate unique order number
-            self.order_number = f"UF{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
+            self.order_number = f"TT{timezone.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
         super().save(*args, **kwargs)
     
     def __str__(self):

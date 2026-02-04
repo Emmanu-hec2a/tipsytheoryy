@@ -35,10 +35,10 @@ def admin_login(request):
             # AJAX request: return JSON
             return JsonResponse({
                 'success': True,
-                'redirect': '/admin-panel/liquor/'
+                'redirect': '/admin-panel/liquor/dashboard/'
             })
         # Normal request: redirect
-        return redirect('/admin-panel/liquor/')
+        return redirect('/admin-panel/liquor/dashboard/')
 
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         try:
@@ -59,7 +59,7 @@ def admin_login(request):
             return JsonResponse({
                 'success': True,
                 'message': 'Admin login successful!',
-                'redirect': '/admin-panel/liquor/'
+                'redirect': '/admin-panel/liquor/dashboard/'
             })
         else:
             return JsonResponse({
@@ -554,6 +554,10 @@ def liquor_orders(request):
     }
 
     return render(request, 'custom_admin/liquor_orders.html', context)
+
+@staff_member_required
+def liquor_order_detail(request, order_number):
+    return redirect('admin_order_detail', order_number=order_number)
 
 @staff_member_required(login_url='admin_login')
 def liquor_analytics(request):

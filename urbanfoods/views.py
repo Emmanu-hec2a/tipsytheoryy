@@ -12,6 +12,8 @@ from .models import *
 import json
 import uuid
 from urbanfoods.notifications import send_admin_order_notification, send_customer_order_confirmation
+from urbanfoods.utils import notify_new_order
+import logging
 
 # ==================== HOMEPAGE & FOOD CATALOG ====================
 
@@ -414,6 +416,7 @@ def place_order(request):
         request.user.loyalty_points += int(total)
         request.user.save()
 
+        notify_new_order(order)
         send_customer_order_confirmation(order)
         send_admin_order_notification(order)
 

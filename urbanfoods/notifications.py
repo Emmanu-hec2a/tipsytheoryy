@@ -673,3 +673,4 @@ Tipsy Theoryy
     except Exception as e:
         print(f"Failed to send customer confirmation email: {e}")
         return False
+        
