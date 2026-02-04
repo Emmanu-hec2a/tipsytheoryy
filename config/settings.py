@@ -171,8 +171,8 @@ ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_NOTIFICATION_EMAIL')
 IS_RAILWAY = os.environ.get("RAILWAY_ENVIRONMENT") is not None
 
 # Telegram Bot config
-TELEGRAM_BOT_TOKEN=os.environ.get('TELEGRAM_BOT_TOKEN')
-TELEGRAM_CHAT_ID=os.environ.get('TELEGRAM_CHAT_ID')
+TELEGRAM_BOTT_TOKEN=os.environ.get('TELEGRAM_BOTT_TOKEN')
+TELEGRAM_CHATT_ID=os.environ.get('TELEGRAM_CHATT_ID')
 
 
 # REST Framework Configuration

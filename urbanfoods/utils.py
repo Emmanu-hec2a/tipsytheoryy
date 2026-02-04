@@ -39,8 +39,8 @@ def format_phone(phone):
 
 def send_telegram_message(message, buttons=None):
     try:
-        bot_token = settings.TELEGRAM_BOT_TOKEN
-        chat_id = settings.TELEGRAM_CHAT_ID
+        bot_token = getattr(settings, 'TELEGRAM_BOTT_TOKEN', None)
+        chat_id = getattr(settings, 'TELEGRAM_CHATT_ID', None)
 
         if not bot_token or not chat_id:
             logger.warning("Telegram credentials not configured")
