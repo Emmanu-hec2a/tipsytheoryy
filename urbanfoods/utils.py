@@ -107,7 +107,7 @@ def notify_new_order(order):
         """.strip()
 
         # ✅ Admin order link
-        admin_url = f"{settings.SITE_URL}/admin-panel/liquor/{order.order_number}/"
+        admin_url = f"{settings.SITE_URL}/admin-panel/liquor/orders/{order.order_number}/"
 
         # ✅ Phone dialer link (works on Telegram mobile)
         phone_number = phone_number = format_phone(order.phone_number) if order.phone_number else ""
