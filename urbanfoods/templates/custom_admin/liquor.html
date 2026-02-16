@@ -30,9 +30,9 @@
                         <div class="card-body">
                             <h6 class="card-title">{{ category.name }}</h6>
                             <p class="card-text">{{ category.description }}</p>
-                            <div class="mb-2">
+                            <!-- <div class="mb-2">
                                 <small class="text-muted">Stock: <span class="fw-semibold">{{ category.stock_quantity }}</span> units</small>
-                            </div>
+                            </div> -->
                             <!-- <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">Order: {{ category.order }}</small>
                             </div> -->
@@ -41,8 +41,7 @@
                                         data-id="{{ category.id }}"
                                         data-name="{{ category.name }}"
                                         data-description="{{ category.description }}"
-                                        data-order="{{ category.order }}"
-                                        data-stock="{{ category.stock_quantity }}">
+                                        >
                                     Edit
                                 </button>
                                 <button class="btn btn-outline-danger delete-category-btn" data-id="{{ category.id }}">
@@ -74,8 +73,8 @@
                             <th>Image</th>
                             <th>Name</th>
                             <th>Category</th>
-                            <th>Bottle Size</th>
                             <th>Price</th>
+                            <th>Stock</th>
                             <th>Prep Time</th>
                             <th>Available</th>
                             <th>Actions</th>
@@ -95,11 +94,21 @@
                             </td>
                             <td>{{ item.name }}</td>
                             <td>{{ item.category.name }}</td>
-                            <td>{{ item.bottle_size|default:"N/A" }}</td>
                             <td>
                                 <span class="price-display">KES {{ item.price }}</span>
                                 <input type="number" class="form-control form-control-sm d-none price-input" 
                                        value="{{ item.price }}" data-id="{{ item.id }}" step="0.01">
+                            </td>
+                            <td>
+                                {% if item.stock <= item.low_stock_threshold %}
+                                    <span class="badge bg-danger">
+                                        Low ({{ item.stock }})
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success">
+                                        {{ item.stock }}
+                                    </span>
+                                {% endif %}
                             </td>
                             <td>{{ item.prep_time }} min</td>
                             <td>
@@ -110,17 +119,24 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary edit-item-btn" 
-                                            data-id="{{ item.id }}" 
-                                            data-name="{{ item.name }}" 
-                                            data-description="{{ item.description }}" 
-                                            data-category="{{ item.category.id }}" 
-                                            data-price="{{ item.price }}" 
+                                    <button class="btn btn-outline-primary edit-item-btn"
+                                            data-id="{{ item.id }}"
+                                            data-name="{{ item.name }}"
+                                            data-description="{{ item.description }}"
+                                            data-category="{{ item.category.id }}"
+                                            data-price="{{ item.price }}"
                                             data-prep-time="{{ item.prep_time }}"
-                                            data-bottle-size="{{ item.bottle_size }}">
+                                            data-stock="{{ item.stock }}">
                                         Edit
                                     </button>
-                                    <button class="btn btn-outline-danger delete-item-btn" data-id="{{ item.id }}">
+
+                                    <button class="btn btn-outline-warning restock-btn"
+                                            data-id="{{ item.id }}">
+                                        Restock
+                                    </button>
+
+                                    <button class="btn btn-outline-danger delete-item-btn"
+                                            data-id="{{ item.id }}">
                                         Delete
                                     </button>
                                 </div>
@@ -133,6 +149,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- Add Category Modal -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1">
@@ -152,15 +169,6 @@
                     <div class="mb-3">
                         <label for="categoryDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
-                    </div>
-                    <!-- <div class="mb-3">
-                        <label for="categoryOrder" class="form-label">Order</label>
-                        <input type="number" class="form-control" id="categoryOrder" value="0">
-                    </div> -->
-                    <div class="mb-3">
-                        <label for="categoryStock" class="form-label">Stock Quantity</label>
-                        <input type="number" class="form-control" id="categoryStock" value="0" min="0">
-                        <small class="form-text text-muted">Available stock for this liquor category</small>
                     </div>
                 </form>
             </div>
@@ -182,6 +190,7 @@
             </div>
             <div class="modal-body">
                 <form id="addItemForm" enctype="multipart/form-data">
+                    <input type="hidden" id="itemMode" value="create">
                     <input type="hidden" id="itemId" value="">
                     <div class="row">
                         <div class="col-md-6">
@@ -204,6 +213,11 @@
                             <div class="mb-3">
                                 <label for="itemPrice" class="form-label">Price (KES)</label>
                                 <input type="number" class="form-control" id="itemPrice" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="itemStock" class="form-label">Stock Quantity</label>
+                                <input type="number" class="form-control" id="itemStock" min="0" value="0" required>
+                                <small class="form-text text-muted">Available stock for this liquor item</small>
                             </div>
                             <div class="mb-3">
                                 <label for="itemPrepTime" class="form-label">Prep Time (minutes)</label>
@@ -307,6 +321,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    document.querySelectorAll('.restock-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const itemId = this.dataset.id;
+
+            document.getElementById('itemMode').value = 'restock';
+
+            fetch(`/admin-panel/api/menu/food-item/${itemId}/`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('itemId').value = data.id;
+                    document.getElementById('itemName').value = data.name;
+                    document.getElementById('itemDescription').value = data.description;
+                    document.getElementById('itemCategory').value = data.category;
+                    document.getElementById('itemPrice').value = data.price;
+                    document.getElementById('itemPrepTime').value = data.prep_time;
+                    document.getElementById('itemStock').value = '';
+
+                    ['itemName','itemDescription','itemCategory','itemPrice','itemPrepTime','itemImage']
+                        .forEach(id => document.getElementById(id).disabled = true);
+
+                    document.querySelector('#addItemModal .modal-title').innerText = "🔁 Restock Item";
+                    new bootstrap.Modal(document.getElementById('addItemModal')).show();
+                });
+        });
+    });
+
+    document.getElementById('addItemModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('itemMode').value = 'create';
+
+        ['itemName','itemDescription','itemCategory','itemPrice','itemPrepTime','itemImage']
+            .forEach(id => document.getElementById(id).disabled = false);
+
+        document.querySelector('#addItemModal .modal-title').innerText = "Add Food Item";
+        document.getElementById('addItemForm').reset();
+    });
+
+
     // Edit category button click
     document.querySelectorAll('.edit-category-btn').forEach(button => {
         button.addEventListener('click', function() {
@@ -314,13 +365,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = this.dataset.name;
             const description = this.dataset.description;
             //const order = this.dataset.order;
-            const stock = this.dataset.stock;
+            //const stock = this.dataset.stock;
 
             document.getElementById('categoryId').value = id;
             document.getElementById('categoryName').value = name;
             document.getElementById('categoryDescription').value = description;
             //document.getElementById('categoryOrder').value = order;
-            document.getElementById('categoryStock').value = stock;
+            //document.getElementById('categoryStock').value = stock;
 
             var addCategoryModal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
             addCategoryModal.show();
@@ -333,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = document.getElementById('categoryName').value;
         const description = document.getElementById('categoryDescription').value;
         //const order = document.getElementById('categoryOrder').value;
-        const stock = document.getElementById('categoryStock').value;
+        //const stock = document.getElementById('categoryStock').value;
 
         const url = id ? `{% url 'edit_category' %}` : `{% url 'add_category' %}`;
 
@@ -348,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: name,
                 description: description,
                 //order: order,
-                stock_quantity: stock,
+                //stock_quantity: stock,
                 store_type: 'liquor'
             })
         })
@@ -408,6 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const description = this.dataset.description;
             const category = this.dataset.category;
             const price = this.dataset.price;
+            const stock = this.dataset.stock;
             const prepTime = this.dataset.prepTime;
             const bottleSize = this.dataset.bottleSize || '';
 
@@ -416,6 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('itemDescription').value = description;
             document.getElementById('itemCategory').value = category;
             document.getElementById('itemPrice').value = price;
+            document.getElementById('itemStock').value = stock;
             document.getElementById('itemPrepTime').value = prepTime;
             document.getElementById('itemBottleSize').value = bottleSize;
 
@@ -426,11 +479,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save item button click
     document.getElementById('saveItemBtn').addEventListener('click', function() {
+        const mode = document.getElementById('itemMode').value;
+
+        if (mode === 'restock') {
+            fetch("{% url 'restock_product' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    product_id: document.getElementById('itemId').value,
+                    amount: document.getElementById('itemStock').value
+                })
+            })
+            .then(res => res.json())
+            .then(data => location.reload());
+
+            return;
+        }
+
         const id = document.getElementById('itemId').value;
         const name = document.getElementById('itemName').value;
         const description = document.getElementById('itemDescription').value;
         const category = document.getElementById('itemCategory').value;
         const price = document.getElementById('itemPrice').value;
+        const stock = document.getElementById('itemStock').value;
         const prepTime = document.getElementById('itemPrepTime').value;
         const bottleSize = document.getElementById('itemBottleSize').value;
         const imageInput = document.getElementById('itemImage');
@@ -441,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('description', description);
         formData.append('category', category);
         formData.append('price', price);
+        formData.append('stock', stock);
         formData.append('prep_time', prepTime);
         formData.append('bottle_size', bottleSize);
         formData.append('store_type', 'liquor');
@@ -466,6 +541,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    document.getElementById('addItemModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('itemMode').value = 'create';
+
+        ['itemName','itemDescription','itemCategory','itemPrice','itemPrepTime','itemImage','itemBottleSize']
+            .forEach(id => document.getElementById(id).disabled = false);
+
+        document.querySelector('#addItemModal .modal-title').innerText = "Add Liquor Item";
+        document.getElementById('addItemForm').reset();
+    });
+
 
     document.querySelectorAll('.delete-item-btn').forEach(button => {
         button.addEventListener('click', function() {

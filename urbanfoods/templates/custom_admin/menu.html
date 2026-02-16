@@ -71,6 +71,7 @@
                             <th>Name</th>
                             <th>Category</th>
                             <th>Price</th>
+                            <th>Stock</th>
                             <th>Prep Time</th>
                             <th>Available</th>
                             <th>Actions</th>
@@ -95,6 +96,17 @@
                                 <input type="number" class="form-control form-control-sm d-none price-input" 
                                        value="{{ item.price }}" data-id="{{ item.id }}" step="0.01">
                             </td>
+                            <td>
+                                {% if item.stock <= item.low_stock_threshold %}
+                                    <span class="badge bg-danger">
+                                        Low ({{ item.stock }})
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success">
+                                        {{ item.stock }}
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td>{{ item.prep_time }} min</td>
                             <td>
                                 <div class="form-check form-switch">
@@ -104,16 +116,24 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary edit-item-btn" 
-                                            data-id="{{ item.id }}" 
-                                            data-name="{{ item.name }}" 
-                                            data-description="{{ item.description }}" 
-                                            data-category="{{ item.category.id }}" 
-                                            data-price="{{ item.price }}" 
-                                            data-prep-time="{{ item.prep_time }}">
+                                    <button class="btn btn-outline-primary edit-item-btn"
+                                            data-id="{{ item.id }}"
+                                            data-name="{{ item.name }}"
+                                            data-description="{{ item.description }}"
+                                            data-category="{{ item.category.id }}"
+                                            data-price="{{ item.price }}"
+                                            data-prep-time="{{ item.prep_time }}"
+                                            data-stock="{{ item.stock }}">
                                         Edit
                                     </button>
-                                    <button class="btn btn-outline-danger delete-item-btn" data-id="{{ item.id }}">
+
+                                    <button class="btn btn-outline-warning restock-btn"
+                                            data-id="{{ item.id }}">
+                                        Restock
+                                    </button>
+
+                                    <button class="btn btn-outline-danger delete-item-btn"
+                                            data-id="{{ item.id }}">
                                         Delete
                                     </button>
                                 </div>
@@ -146,10 +166,10 @@
                         <label for="categoryDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <label for="categoryOrder" class="form-label">Order</label>
                         <input type="number" class="form-control" id="categoryOrder" value="0">
-                    </div>
+                    </div> -->
                 </form>
             </div>
             <div class="modal-footer">
@@ -185,10 +205,17 @@
                                     {% endfor %}
                                 </select>
                             </div>
+
                             <div class="mb-3">
                                 <label for="itemPrice" class="form-label">Price (KES)</label>
                                 <input type="number" class="form-control" id="itemPrice" step="0.01" required>
                             </div>
+
+                            <div class="mb-3">
+                                <label for="itemStock" class="form-label">Stock Quantity</label>
+                                <input type="number" class="form-control" id="itemStock" min="0" value="0" required>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="itemPrepTime" class="form-label">Prep Time (minutes)</label>
                                 <input type="number" class="form-control" id="itemPrepTime" required>
@@ -395,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('itemDescription').value = description;
             document.getElementById('itemCategory').value = category;
             document.getElementById('itemPrice').value = price;
+            document.getElementById('itemStock').value = this.dataset.stock;
             document.getElementById('itemPrepTime').value = prepTime;
 
             var addItemModal = new bootstrap.Modal(document.getElementById('addItemModal'));
@@ -418,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('description', description);
         formData.append('category', category);
         formData.append('price', price);
+        formData.append('stock', document.getElementById('itemStock').value);
         formData.append('prep_time', prepTime);
         formData.append('store_type', 'food');
         if (imageInput.files.length > 0) {
@@ -442,6 +471,36 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    document.querySelectorAll('.restock-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const itemId = this.dataset.id;
+            const amount = prompt("Enter restock quantity:");
+
+            if (!amount || isNaN(amount)) return;
+
+            fetch("{% url 'restock_item' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    quantity: amount
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert("Restock failed");
+                }
+            });
+        });
+    });
+
 
     // Delete item button click
     document.querySelectorAll('.delete-item-btn').forEach(button => {

@@ -9,7 +9,7 @@ from django.db.models import Count, Sum, Avg, Max, F
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from datetime import timedelta
-from .utils import send_push_to_all
+from .utils import send_push_to_all, notify_low_stock
 from .models import *
 import json
 
@@ -336,53 +336,100 @@ def admin_order_detail(request, order_number):
 
     return render(request, 'custom_admin/order_detail.html', context)
 
+from django.db import transaction
+from django.views.decorators.http import require_http_methods
+from .utils import notify_low_stock
+
 @staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
 def update_order_status(request):
-    """Update order status"""
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        order_number = data.get('order_number')
-        new_status = data.get('status')
-        notes = data.get('notes', '')
+    """Update order status and handle stock reduction"""
+    data = json.loads(request.body)
+    order_number = data.get('order_number')
+    new_status = data.get('status')
+    notes = data.get('notes', '')
 
-        order = get_object_or_404(Order, order_number=order_number)
+    order = get_object_or_404(Order, order_number=order_number)
 
-        # Update status
-        old_status = order.status
-        order.status = new_status
+    old_status = order.status
+    order.status = new_status
 
-        # Set delivered timestamp and reduce stock
-        if new_status == 'delivered' and old_status != 'delivered':
-            order.delivered_at = timezone.now()
+    # ✅ When order is delivered → reduce PRODUCT stock
+    if new_status == 'delivered' and old_status != 'delivered':
+        order.delivered_at = timezone.now()
 
-            # Reduce stock for liquor items
-            for item in order.items.filter(food_item__store_type='liquor'):
-                category = item.food_item.category
-                if category.stock_quantity >= item.quantity:
-                    category.stock_quantity -= item.quantity
-                    category.save()
-                else:
-                    # Insufficient stock - this shouldn't happen in normal flow
-                    # but handle gracefully
-                    pass
+        with transaction.atomic():
+            for item in order.items.select_related('food_item'):
+                product = item.food_item
 
-        order.save()
+                # Only track liquor stock
+                if product.store_type != 'liquor':
+                    continue
 
-        # Create status history entry
-        OrderStatusHistory.objects.create(
-            order=order,
-            status=new_status,
-            notes=notes or f'Status changed from {old_status} to {new_status}'
-        )
+                old_stock = product.stock
+                new_stock = old_stock - item.quantity
 
-        return JsonResponse({
-            'success': True,
-            'message': f'Order {order_number} status updated to {new_status}',
-            'new_status': new_status,
-            'status_display': order.get_status_display()
-        })
+                # Prevent negative stock
+                if new_stock < 0:
+                    new_stock = 0
 
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
+                product.stock = new_stock
+
+                # Auto hide if out of stock
+                if new_stock == 0:
+                    product.is_available = False
+
+                product.save()
+
+                # 🚨 LOW STOCK ALERT (only when crossing threshold)
+                if (
+                    old_stock > product.low_stock_threshold and
+                    new_stock <= product.low_stock_threshold
+                ):
+                    notify_low_stock(product)
+
+    order.save()
+
+    # 📝 Status history
+    OrderStatusHistory.objects.create(
+        order=order,
+        status=new_status,
+        notes=notes or f'Status changed from {old_status} to {new_status}'
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Order {order_number} status updated to {new_status}',
+        'new_status': new_status,
+        'status_display': order.get_status_display()
+    })
+
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
+def restock_product(request):
+    data = json.loads(request.body)
+    product_id = data.get("product_id")
+    amount = int(data.get("amount", 0))
+
+    product = get_object_or_404(FoodItem, id=product_id)
+
+    if not product_id:
+        return JsonResponse({"Success": False, "message": "Product ID is required"})
+
+    if amount <= 0:
+        return JsonResponse({"success": False, "message": "Invalid restock amount"})
+
+    product.stock += amount
+    product.is_available = True
+    product.save()
+
+    return JsonResponse({
+        "success": True,
+        "new_stock": product.stock,
+        "message": f"{product.name} restocked successfully"
+    })
+
 
 @staff_member_required(login_url='admin_login')
 def cancel_order(request):
@@ -741,7 +788,7 @@ def add_category(request):
         name = data.get('name')
         description = data.get('description', '')
         order = data.get('order', 0)
-        stock_quantity = data.get('stock_quantity', 0)
+        #stock_quantity = data.get('stock_quantity', 0)
 
         if not name:
             return JsonResponse({'success': False, 'message': 'Category name is required'})
@@ -751,7 +798,7 @@ def add_category(request):
             name=name,
             description=description,
             order=order,
-            stock_quantity=stock_quantity,
+            #stock_quantity=stock_quantity,
             store_type=store_type
         )
 
@@ -772,7 +819,6 @@ def edit_category(request):
         name = data.get('name')
         description = data.get('description', '')
         order = data.get('order', 0)
-        stock_quantity = data.get('stock_quantity', 0)
 
         if not category_id or not name:
             return JsonResponse({'success': False, 'message': 'Category ID and name are required'})
@@ -781,7 +827,7 @@ def edit_category(request):
         category.name = name
         category.description = description
         category.order = order
-        category.stock_quantity = stock_quantity
+        # Note: Stock is tracked on Products (FoodItem), not Categories
         category.save()
 
         return JsonResponse({
@@ -826,6 +872,20 @@ def delete_category(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
+@staff_member_required(login_url='admin_login')
+def get_food_item_api(request, item_id):
+    item = get_object_or_404(FoodItem, id=item_id)
+    return JsonResponse({
+        "id": item.id,
+        "name": item.name,
+        "description": item.description,
+        "category": item.category.id,
+        "price": str(item.price),
+        "prep_time": item.prep_time,
+        "stock": item.stock,
+        "bottle_size": item.bottle_size
+    })
+
 
 @staff_member_required(login_url='admin_login')
 def add_food_item(request):
@@ -848,6 +908,7 @@ def add_food_item(request):
 
         bottle_size = request.POST.get('bottle_size', '')
         store_type = request.POST.get('store_type', 'food')
+        stock = request.POST.get('stock', 0)
         
         food_item = FoodItem.objects.create(
             name=name,
@@ -857,7 +918,8 @@ def add_food_item(request):
             prep_time=prep_time,
             image=image,
             bottle_size=bottle_size,
-            store_type=store_type
+            store_type=store_type,
+            stock=stock
         )
 
         return JsonResponse({

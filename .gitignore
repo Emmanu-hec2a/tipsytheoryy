@@ -68,6 +68,8 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+qr_code.py
+tipsy_qr.png
 
 # Sphinx documentation
 docs/_build/

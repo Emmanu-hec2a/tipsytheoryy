@@ -97,6 +97,9 @@ urlpatterns = [
     path('admin-panel/api/menu/add-food-item/', admin_views.add_food_item, name='add_food_item'),
     path('admin-panel/api/menu/edit-food-item/', admin_views.edit_food_item, name='edit_food_item'),
     path('admin-panel/api/menu/delete-food-item/', admin_views.delete_food_item, name='delete_food_item'),
+    path('admin-panel/restock-product/', admin_views.restock_product, name='restock_product'),
+    path('admin-panel/api/menu/food-item/<int:item_id>/', admin_views.get_food_item_api, name='get_food_item_api'),
+
     
     # Analytics
     path('admin-panel/analytics/', admin_views.admin_analytics, name='admin_analytics'),

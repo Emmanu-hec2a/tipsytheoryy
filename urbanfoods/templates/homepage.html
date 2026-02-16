@@ -1322,6 +1322,7 @@
     </div>
 
     <!-- Age Verification Modal -->
+    <!-- Age Verification Modal -->
     <div id="ageVerificationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg max-w-md w-full p-6 fade-in">
             <div class="text-center">
@@ -1331,10 +1332,10 @@
                 <h2 class="text-2xl font-bold mb-2">Age Verification Required</h2>
                 <p class="text-gray-600 mb-6">You must be 18 years or older to access the Liquor Store.</p>
                 <div class="space-y-3">
-                    <button onclick="verifyAge(true)" class="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700">
+                    <button onclick="verifyAge(true)" class="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold hover:bg-orange-700 transition">
                         I am 18 or older
                     </button>
-                    <button onclick="verifyAge(false)" class="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300">
+                    <button onclick="verifyAge(false)" class="w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">
                         I am under 18
                     </button>
                 </div>
@@ -2285,16 +2286,26 @@
         // ==================== STORE SWITCHING ====================
 
         // Check if user is age verified (stored in localStorage)
-        function isAgeVerified() {
-            return localStorage.getItem('age_verified') === 'true';
-        }
+        
 
         // Store switching function
         async function switchStore(storeType) {
             // If switching to liquor store, check age verification
-            if (storeType === 'liquor' && !isAgeVerified()) {
-                document.getElementById('ageVerificationModal').classList.remove('hidden');
-                return;
+            if (storeType === 'liquor') {
+                const ageVerified = sessionStorage.getItem('age_verified');
+                const isBlocked = sessionStorage.getItem('access_blocked');
+                
+                // If user is blocked, show blocked screen
+                if (isBlocked === 'true') {
+                    showBlockedScreen();
+                    return;
+                }
+                
+                // If not verified, show age verification modal
+                if (ageVerified !== 'true') {
+                    showAgeVerificationModal();
+                    return;
+                }
             }
 
             // Check if cart has items of different store type
@@ -2367,28 +2378,194 @@
         }
 
         // Age verification function
+        // Age verification function
         function verifyAge(isOfAge) {
             const modal = document.getElementById('ageVerificationModal');
             
             if (isOfAge) {
-                // Store age verification in localStorage
-                localStorage.setItem('age_verified', 'true');
+                // Store age verification in sessionStorage (clears when tab closes)
+                sessionStorage.setItem('age_verified', 'true');
                 modal.classList.add('hidden');
                 // Switch to liquor store
                 switchStore('liquor');
             } else {
-                // User is underage
+                // User is underage - BLOCK COMPLETELY
+                sessionStorage.setItem('access_blocked', 'true');
+                sessionStorage.removeItem('age_verified');
                 modal.classList.add('hidden');
-                showToast('You must be 18 or older to access the Liquor Store.', 'error');
+                showBlockedScreen();
             }
         }
 
-        // Check age verification on page load if on liquor store
-        document.addEventListener('DOMContentLoaded', () => {
-            if (storeType === 'liquor' && !isAgeVerified()) {
-                document.getElementById('ageVerificationModal').classList.remove('hidden');
-            }
+        function showBlockedScreen() {
+            // Create blocking overlay
+            const existingOverlay = document.getElementById('age-restriction-overlay');
+            if (existingOverlay) return; // Already showing
+            
+            const overlay = document.createElement('div');
+            overlay.id = 'age-restriction-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(40, 40, 40, 0.8));
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                z-index: 999999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1rem;
+            `;
+            
+            overlay.innerHTML = `
+                <div style="
+                    background: rgba(255, 255, 255, 0.1);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border-radius: 1.5rem;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                    max-width: 28rem;
+                    width: 100%;
+                    padding: 3rem 2rem;
+                    text-align: center;
+                    animation: fadeIn 0.3s ease-in;
+                ">
+                    <div style="margin-bottom: 1.5rem;">
+                        <i class="fas fa-ban" style="
+                            color: #ef4444;
+                            font-size: 4rem;
+                            filter: drop-shadow(0 4px 6px rgba(239, 68, 68, 0.3));
+                        "></i>
+                    </div>
+                    
+                    <h2 style="
+                        font-size: 2rem;
+                        font-weight: 700;
+                        margin-bottom: 1rem;
+                        color: #ffffff;
+                        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                    ">Access Restricted</h2>
+                    
+                    <p style="
+                        color: #f3f4f6;
+                        margin-bottom: 1rem;
+                        font-size: 1.125rem;
+                        line-height: 1.75;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    ">
+                        You must be 18 years or older to access this website.
+                    </p>
+                    
+                    <p style="
+                        color: #e5e7eb;
+                        margin-bottom: 1.5rem;
+                        line-height: 1.75;
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    ">
+                        This site sells alcoholic beverages, which are restricted to adults ONLY.
+                    </p>
+                    
+                    <div style="
+                        background: rgba(255, 255, 255, 0.05);
+                        backdrop-filter: blur(10px);
+                        -webkit-backdrop-filter: blur(10px);
+                        border-radius: 1rem;
+                        padding: 1rem;
+                        margin-bottom: 1.5rem;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    ">
+                        <p style="
+                            font-size: 0.875rem;
+                            color: #d1d5db;
+                            line-height: 1.5;
+                        ">
+                            If you believe this is an error, please close this page and try again.
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            // Add fadeIn animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+            
+            // Disable back button (prevent circumvention)
+            history.pushState(null, null, location.href);
+            window.onpopstate = function() {
+                history.go(1);
+            };
+            
+            // Disable all interactive elements behind the overlay
+            blockSiteAccess();
+        }
+
+        function blockSiteAccess() {
+            // Disable all interactive elements except the overlay
+            document.querySelectorAll('a, button, input, select, textarea').forEach(el => {
+                if (!el.closest('#age-restriction-overlay')) {
+                    el.disabled = true;
+                    el.style.pointerEvents = 'none';
+                    el.style.opacity = '0.5';
+                }
+            });
+        }
+
+        // Check age verification on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            checkAgeVerification();
         });
+
+        function checkAgeVerification() {
+            const ageVerified = sessionStorage.getItem('age_verified');
+            const isBlocked = sessionStorage.getItem('access_blocked');
+            
+            // If blocked, show blocking screen immediately
+            if (isBlocked === 'true') {
+                showBlockedScreen();
+                return;
+            }
+            
+            // If trying to access liquor store and not verified, show modal
+            const currentStore = getCurrentStore(); // Your existing function
+            if (currentStore === 'liquor' && ageVerified !== 'true') {
+                showAgeVerificationModal();
+            }
+        }
+
+        function showAgeVerificationModal() {
+            const modal = document.getElementById('ageVerificationModal');
+            modal.classList.remove('hidden');
+        }
+
+        // Helper function - adjust based on your store logic
+        function getCurrentStore() {
+            // Check your current store state
+            // Example: return localStorage.getItem('currentStore') || 'general';
+            return 'liquor'; // Adjust this to your actual implementation
+        }
+
+        // Check age verification on page load if on liquor store
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     if (storeType === 'liquor' && !isAgeVerified()) {
+        //         document.getElementById('ageVerificationModal').classList.remove('hidden');
+        //     }
+        // });
 
         // ==================== PWA INSTALL PROMPT ====================
 

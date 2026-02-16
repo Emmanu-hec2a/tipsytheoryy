@@ -165,3 +165,58 @@ Status: Completed ✅
     """.strip()
 
     return send_telegram_message(message)
+
+def notify_low_stock(product):
+    """Send Telegram alert for a single low stock product"""
+    threshold = getattr(product, 'low_stock_threshold', 2)
+    message = f"""
+⚠️ <b>LOW STOCK ALERT</b>
+
+🍾 <b>{product.name}</b>
+📦 Remaining Stock: <b>{product.stock}</b>
+🏷️ Threshold: {threshold}
+🏷 Category: {product.category.name}
+
+Restock soon!
+    """.strip()
+
+    admin_url = f"{settings.SITE_URL}/admin-panel/liquor/menu/"
+
+    buttons = [[{"text": "Restock", "url": admin_url}]]
+
+    return send_telegram_message(message, buttons=buttons)
+
+
+def check_and_notify_low_stock():
+    """
+    Check all products for low stock and send Telegram alerts.
+    This function checks products where stock < low_stock_threshold (default 2).
+    Should be called periodically or after order processing.
+    """
+    from .models import FoodItem
+    from django.db import models
+    
+    # Get all products with stock below their threshold
+    low_stock_products = FoodItem.objects.filter(
+        stock__gt=0  # Only check products that have stock (ignore out of stock)
+    ).filter(
+        stock__lt=models.F('low_stock_threshold')
+    )
+    
+    if not low_stock_products.exists():
+        logger.info("No low stock products found")
+        return False
+    
+    alert_count = 0
+    for product in low_stock_products:
+        try:
+            notify_low_stock(product)
+            alert_count += 1
+        except Exception as e:
+            logger.error(f"Failed to send low stock alert for {product.name}: {e}")
+    
+    if alert_count > 0:
+        logger.info(f"✅ Sent {alert_count} low stock alerts")
+    
+    return alert_count > 0
+

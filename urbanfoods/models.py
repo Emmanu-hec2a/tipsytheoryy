@@ -33,7 +33,7 @@ class FoodCategory(models.Model):
     icon = models.CharField(max_length=50, blank=True)  # emoji or icon class
     order = models.IntegerField(default=0)  # for sorting
     store_type = models.CharField(max_length=10, choices=STORE_CHOICES, default='liquor')
-    stock_quantity = models.PositiveIntegerField(default=0, help_text="Available stock for this category (for liquor store)")
+    #stock_quantity = models.PositiveIntegerField(default=0, help_text="Available stock for this category (for liquor store)")
     
     class Meta:
         verbose_name_plural = "Liquor Categories"
@@ -54,6 +54,8 @@ class FoodItem(models.Model):
     description = models.TextField()
     category = models.ForeignKey(FoodCategory, on_delete=models.CASCADE, related_name='items')
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    stock = models.PositiveIntegerField(default=0, help_text="Available units in stock")
+    low_stock_threshold = models.PositiveIntegerField(default=2, help_text="Alert when stock goes below this number")
     image = models.ImageField(upload_to='food_images/')
     prep_time = models.IntegerField(help_text="Preparation time in minutes", default=15)
     is_available = models.BooleanField(default=True)

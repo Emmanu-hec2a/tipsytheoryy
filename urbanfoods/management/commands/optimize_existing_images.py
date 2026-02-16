@@ -2,9 +2,10 @@
 # from django.contrib.auth import get_user_model
 # from django.utils import timezone
 # from decimal import Decimal
+# from django.conf import settings
 
 # from urbanfoods.models import Order, OrderItem, FoodItem
-# from urbanfoods.utils import notify_new_order
+# from urbanfoods.utils import notify_new_order, notify_low_stock, send_telegram_message
 
 # User = get_user_model()
 
@@ -77,3 +78,43 @@
 #             self.stdout.write(self.style.ERROR(
 #                 "notify_new_order() failed"
 #             ))
+
+#     help = "Send Telegram low stock alert for liquor products"
+
+#     def add_arguments(self, parser):
+#         parser.add_argument(
+#             '--id',
+#             type=int,
+#             help='Test low stock alert for a specific FoodItem ID'
+#         )
+
+#     def handle(self, *args, **options):
+#         item_id = options.get('id', 3)
+
+#         if item_id:
+#             try:
+#                 item = FoodItem.objects.get(id=item_id)
+#             except FoodItem.DoesNotExist:
+#                 self.stdout.write(self.style.ERROR(f"❌ FoodItem with ID {item_id} not found"))
+#                 return
+
+#             self.stdout.write(self.style.WARNING(f"Testing low stock alert for: {item.name} (Stock: {item.stock})"))
+#             notify_low_stock(item)
+#             self.stdout.write(self.style.SUCCESS("✅ Telegram notification sent (if stock ≤ threshold)"))
+#             return
+
+#         # Bulk test for all liquor items below threshold
+#         low_stock_items = FoodItem.objects.filter(
+#             store_type='liquor',
+#             stock__lte=5
+#         )
+
+#         if not low_stock_items.exists():
+#             self.stdout.write(self.style.WARNING("⚠️ No liquor items are currently low on stock"))
+#             return
+
+#         for item in low_stock_items:
+#             notify_low_stock(item)
+#             self.stdout.write(self.style.SUCCESS(f"✅ Alert sent for {item.name} (Stock: {item.stock})"))
+
+#         self.stdout.write(self.style.SUCCESS("🎉 Low stock test completed"))
