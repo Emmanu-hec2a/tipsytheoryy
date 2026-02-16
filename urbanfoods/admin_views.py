@@ -931,44 +931,56 @@ def add_food_item(request):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 @staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
 def edit_food_item(request):
     """Edit an existing food item"""
-    if request.method == 'POST':
-        item_id = request.POST.get('id')
-        name = request.POST.get('name')
-        description = request.POST.get('description')
-        category_id = request.POST.get('category')
-        price = request.POST.get('price')
-        prep_time = request.POST.get('prep_time')
-        image = request.FILES.get('image')
+    item_id = request.POST.get('id')
+    name = request.POST.get('name')
+    description = request.POST.get('description')
+    category_id = request.POST.get('category')
+    price = request.POST.get('price')
+    prep_time = request.POST.get('prep_time')
+    image = request.FILES.get('image')
+    stock = request.POST.get('stock')  # ✅ NEW
 
-        if not item_id or not all([name, description, category_id, price, prep_time]):
-            return JsonResponse({'success': False, 'message': 'All fields are required'})
+    if not item_id or not all([name, description, category_id, price, prep_time]):
+        return JsonResponse({'success': False, 'message': 'All fields are required'})
 
+    try:
+        food_item = FoodItem.objects.get(id=item_id)
+        category = FoodCategory.objects.get(id=category_id)
+    except (FoodItem.DoesNotExist, FoodCategory.DoesNotExist):
+        return JsonResponse({'success': False, 'message': 'Invalid food item or category'})
+
+    food_item.name = name
+    food_item.description = description
+    food_item.category = category
+    food_item.price = price
+    food_item.prep_time = prep_time
+
+    bottle_size = request.POST.get('bottle_size', '')
+    if bottle_size:
+        food_item.bottle_size = bottle_size
+
+    if image:
+        food_item.image = image
+
+    # ✅ Fix: Update stock properly
+    if stock is not None and stock != "":
         try:
-            food_item = FoodItem.objects.get(id=item_id)
-            category = FoodCategory.objects.get(id=category_id)
-        except (FoodItem.DoesNotExist, FoodCategory.DoesNotExist):
-            return JsonResponse({'success': False, 'message': 'Invalid food item or category'})
+            stock = int(stock)
+            food_item.stock = max(0, stock)
+            food_item.is_available = stock > 0
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'Invalid stock value'})
 
-        food_item.name = name
-        food_item.description = description
-        food_item.category = category
-        food_item.price = price
-        food_item.prep_time = prep_time
-        bottle_size = request.POST.get('bottle_size', '')
-        if bottle_size:
-            food_item.bottle_size = bottle_size
-        if image:
-            food_item.image = image
-        food_item.save()
+    food_item.save()
 
-        return JsonResponse({
-            'success': True,
-            'message': f'Food item "{name}" updated successfully'
-        })
-
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
+    return JsonResponse({
+        'success': True,
+        'message': f'Food item "{name}" updated successfully',
+        'new_stock': food_item.stock
+    })
 
 @staff_member_required(login_url='admin_login')
 @require_POST
