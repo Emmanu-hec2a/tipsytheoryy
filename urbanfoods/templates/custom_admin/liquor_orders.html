@@ -351,7 +351,7 @@
                                 {% if order.payment_method != 'cod' %}
                                 <button class="btn btn-sm btn-outline-success"
                                         title="M-Pesa Payment Details"
-                                        onclick="openMpesaModal('{{ order.order_number }}')">
+                                        data-order-number="{{ order.order_number }}">
                                     <i class="fas fa-mobile-alt"></i>
                                 </button>
                                 {% endif %}
@@ -504,9 +504,9 @@
 
                 <!-- Actions -->
                 <div class="mpesa-modal-actions">
-                    <button class="btn-mpesa-verify" id="btnVerify" onclick="verifyPayment()">
+                    <!-- <button class="btn-mpesa-verify" id="btnVerify" onclick="verifyPayment()">
                         <i class="fas fa-search-dollar"></i> Verify with Safaricom
-                    </button>
+                    </button> -->
                     <button class="btn-mpesa-resend" id="btnResend2" onclick="resendStkPush()" style="display:none;">
                         <i class="fas fa-paper-plane"></i> Resend STK Push
                     </button>
@@ -666,6 +666,15 @@
     ═══════════════════════════════════════════ */
 
     /** Open the M-Pesa modal and fetch payment data */
+    // Attach click listeners to all M-Pesa buttons
+    document.querySelectorAll('.btn-mpesa-details').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const orderNumber = btn.dataset.orderNumber;
+            openMpesaModal(orderNumber);
+        });
+    });
+
+    // Make sure openMpesaModal is still defined
     function openMpesaModal(orderNumber) {
         currentOrderNumber = orderNumber;
         currentMpesaData   = null;
@@ -676,8 +685,10 @@
         document.getElementById('mpesaDetails').style.display   = 'none';
         document.getElementById('mpesaStatusBadge').innerHTML   = '';
 
+        // Show modal
         new bootstrap.Modal(document.getElementById('mpesaModal')).show();
 
+        // Fetch payment details
         fetch(`/admin-panel/api/orders/mpesa-details/?order_number=${orderNumber}`, {
             headers: { 'X-CSRFToken': getCSRFToken() }
         })
@@ -700,47 +711,50 @@
 
     /** Populate the modal with real payment data */
     function renderMpesaDetails(p) {
-        // Status badge
-        const statusMap = {
-            completed : { cls: 'status-completed', icon: 'fa-check-circle',  label: 'Completed' },
-            pending   : { cls: 'status-pending',   icon: 'fa-clock',          label: 'Pending'   },
-            failed    : { cls: 'status-failed',    icon: 'fa-times-circle',   label: 'Failed'    },
-        };
-        const s = statusMap[p.status] || statusMap['pending'];
-        document.getElementById('mpesaStatusBadge').innerHTML =
-            `<span class="mpesa-status-pill ${s.cls}"><i class="fas ${s.icon}"></i> ${s.label}</span>`;
+    // Hide loading & no-payment
+    document.getElementById('mpesaLoading').style.display = 'none';
+    document.getElementById('mpesaNoPayment').style.display = 'none';
+    
+    // Status badge
+    const statusMap = {
+        completed : { cls: 'status-completed', icon: 'fa-check-circle', label: 'Completed'},
+        pending : { cls: 'status-pending', icon: 'fa-clock', label: 'Pending'},
+        failed : { cls: 'status-failed', icon: 'fa-times-circle', label: 'Failed'},
+    };
+    const status = p.status || (p.result_code === 0 ? 'completed' : 'failed');
+    const s = statusMap[status] || statusMap['pending'];
+    document.getElementById('mpesaStatusBadge').innerHTML =
+        `<span class="mpesa-status-pill ${s.cls}"><i class="fas ${s.icon}"></i> ${s.label}</span>`;
 
-        // Fields
-        document.getElementById('mpesaAmount').textContent     = `KES ${Number(p.amount).toLocaleString('en-KE', {minimumFractionDigits:2})}`;
-        document.getElementById('mpesaReceiptNo').textContent  = p.mpesa_receipt_number  || '—';
-        document.getElementById('mpesaCheckoutId').textContent = p.checkout_request_id   || '—';
-        document.getElementById('mpesaPhone').textContent      = p.phone_number           || '—';
-        document.getElementById('mpesaOrderRef').textContent   = p.order_number           || currentOrderNumber;
-        document.getElementById('mpesaDate').textContent       = p.transaction_date
-            ? new Date(p.transaction_date).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' })
-            : '—';
-        document.getElementById('mpesaResultDesc').textContent = p.result_description     || '—';
+    // Fields
+    document.getElementById('mpesaAmount').textContent = `KES ${Number(p.amount).toLocaleString('en-KE', {minimumFractionDigits:2})}`;
+    document.getElementById('mpesaReceiptNo').textContent = p.mpesa_receipt_number || '—';
+    document.getElementById('mpesaCheckoutId').textContent = p.checkout_request_id || '—';
+    document.getElementById('mpesaPhone').textContent = p.phone_number || '—';
+    document.getElementById('mpesaOrderRef').textContent = p.order_number || currentOrderNumber;
+    document.getElementById('mpesaDate').textContent = p.transaction_date
+        ? new Date(p.transaction_date).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' })
+        : '—';
+    document.getElementById('mpesaResultDesc').textContent = p.result_desc || '—';
 
-        // Timeline
-        const timeline = buildTimeline(p);
-        document.getElementById('mpesaTimeline').innerHTML = timeline;
+    // Timeline
+    document.getElementById('mpesaTimeline').innerHTML = buildTimeline(p);
 
-        // Action buttons
-        const failed  = p.status === 'failed';
-        const success = p.status === 'completed';
-        document.getElementById('btnResend2').style.display = failed  ? 'flex' : 'none';
-        document.getElementById('btnRefund').style.display  = success ? 'flex' : 'none';
+    // Action buttons
+    document.getElementById('btnResend2').style.display = (status === 'failed') ? 'flex' : 'none';
+    document.getElementById('btnRefund').style.display = (status === 'completed') ? 'flex' : 'none';
 
-        document.getElementById('mpesaDetails').style.display = 'block';
-    }
+    // Show details
+    document.getElementById('mpesaDetails').style.display = 'block';
+}
 
     /** Build timeline HTML from payment object */
     function buildTimeline(p) {
         const events = [
-            { label: 'STK Push Initiated', time: p.created_at,          done: true   },
-            { label: 'Customer Prompted',  time: p.prompt_time,          done: !!p.prompt_time },
-            { label: 'Payment Received',   time: p.transaction_date,     done: p.status === 'completed', failed: false },
-            { label: 'Callback Received',  time: p.callback_received_at, done: !!p.callback_received_at, failed: p.status === 'failed' },
+            { label: 'STK Push Initiated', time: p.created_at, done: true},
+            { label: 'Customer Prompted',  time: p.prompt_time, done: !!p.prompt_time},
+            { label: 'Payment Received',   time: p.transaction_date, done: p.status === 'completed', failed: false},
+            { label: 'Callback Received',  time: p.callback_received_at, done: !!p.callback_received_at, failed: p.status === 'failed'},
         ];
         return events.map(e => {
             const dotClass = e.failed ? 'failed' : (e.done ? 'active' : '');
