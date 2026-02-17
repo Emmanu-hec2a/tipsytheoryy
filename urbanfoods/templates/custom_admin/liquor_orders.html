@@ -294,35 +294,37 @@
 
                         <!-- ── Payment cell ── -->
                         <td>
-                            {% if order.mpesa_transactions %}
-                                {% with p=order.mpesa_transactions %}
-                                {% if p.payment_status == 'completed' %}
-                                    <span class="payment-badge paid">
-                                        <i class="fas fa-check-circle"></i> Paid
-                                    </span>
-                                {% elif p.payment_status == 'failed' %}
-                                    <span class="payment-badge failed">
-                                        <i class="fas fa-times-circle"></i> Failed
-                                    </span>
-                                <!-- {% elif p.status == 'refunded' %}
-                                    <span class="payment-badge refunded">
-                                        <i class="fas fa-undo"></i> Refunded
-                                    </span> -->
+                            {% if order.payment_method == 'mpesa' %}
+                                {% if order.mpesa_transactions.exists %}
+                                    {% with txn=order.mpesa_transactions.first %}
+                                        {% if order.payment_status == 'completed' %}
+                                            <span class="payment-badge paid">
+                                                <i class="fas fa-check-circle"></i> Paid
+                                            </span>
+                                        {% elif order.payment_status == 'failed' %}
+                                            <span class="payment-badge failed">
+                                                <i class="fas fa-times-circle"></i> Failed
+                                            </span>
+                                        {% elif order.payment_status == 'cancelled' %}
+                                            <span class="payment-badge cancelled">
+                                                <i class="fas fa-ban"></i> Cancelled
+                                            </span>
+                                        {% else %}
+                                            <span class="payment-badge pending">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        {% endif %}
+                                        <br>
+                                        <small class="text-muted mt-1 d-block">M-Pesa</small>
+                                    {% endwith %}
                                 {% else %}
                                     <span class="payment-badge pending">
-                                        <i class="fas fa-clock"></i> Pending
+                                        <i class="fas fa-clock"></i> Unpaid
                                     </span>
                                 {% endif %}
-                                <br>
-                                <small class="text-muted mt-1 d-block">M-Pesa</small>
-                                {% endwith %}
-                            {% elif order.payment_method == 'cod' %}
+                            {% else %}
                                 <span class="payment-badge cod">
                                     <i class="fas fa-money-bill-wave"></i> COD
-                                </span>
-                            {% else %}
-                                <span class="payment-badge pending">
-                                    <i class="fas fa-clock"></i> Unpaid
                                 </span>
                             {% endif %}
                         </td>
