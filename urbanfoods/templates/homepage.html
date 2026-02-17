@@ -1845,6 +1845,11 @@
             document.getElementById('paymentVerifyingModal').classList.remove('hidden');
         }
 
+        function hidePaymentVerifyingModal() {
+            document.getElementById('paymentVerifyingModal').classList.add('hidden');
+        }
+
+
         // Show payment failed modal
         function showPaymentFailedModal(reason) {
             document.getElementById('failureReason').textContent = reason;
@@ -1876,6 +1881,7 @@
                             // Success confirmed by callback
                             clearInterval(pollInterval);
                             document.getElementById('paymentProcessingModal').classList.add('hidden');
+                            hidePaymentVerifyingModal();
                             if (typeof toggleCart === 'function') toggleCart();
                             showPaymentSuccessModal(orderNumber, '30 minutes');
                             document.getElementById('checkoutForm').reset();
@@ -1885,6 +1891,7 @@
                             // Failed confirmed by callback
                             clearInterval(pollInterval);
                             document.getElementById('paymentProcessingModal').classList.add('hidden');
+                            hidePaymentVerifyingModal();
                             showPaymentFailedModal('Payment was cancelled or failed');
                             return; // Exit
                         }
@@ -1910,6 +1917,7 @@
                         if (stkData.success && stkData.result_code && String(stkData.result_code) !== '0') {
                             clearInterval(pollInterval);
                             document.getElementById('paymentProcessingModal').classList.add('hidden');
+                            hidePaymentVerifyingModal();
                             showPaymentFailedModal(stkData.result_desc || 'Payment was cancelled');
                             return;
                         }
@@ -1922,6 +1930,7 @@
                 if (attempts >= maxAttempts) {
                     clearInterval(pollInterval);
                     document.getElementById('paymentProcessingModal').classList.add('hidden');
+                    hidePaymentVerifyingModal();
                     showPaymentFailedModal('Payment confirmation timeout. Please check your orders page.');
                 }
             }, 3000);
