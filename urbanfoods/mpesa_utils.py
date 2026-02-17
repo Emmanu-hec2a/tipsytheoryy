@@ -98,7 +98,7 @@ class MpesaIntegration:
             "PartyA": phone_number,
             "PartyB": shortcode,
             "PhoneNumber": phone_number,
-            "CallBackURL": "https://sandbox.safaricom.co.ke/mpesa/",
+            "CallBackURL": os.environ.get('MPESA_CALLBACK_URL'),
             "AccountReference": account_ref,
             "TransactionDesc": transaction_desc[:13]
         }
@@ -109,16 +109,6 @@ class MpesaIntegration:
         }
 
         try:
-            logger.info(f"""
-            ===== SANDBOX DEBUG =====
-            Shortcode: {shortcode}
-            Phone: {phone_number}
-            Amount: {amount}
-            Callback: {"https://sandbox.safaricom.co.ke/mpesa/"}
-            Base URL: {self.base_url}
-            =========================
-            """)
-
             response = requests.post(
                 self.stk_push_url,
                 json=payload,
@@ -126,16 +116,8 @@ class MpesaIntegration:
                 timeout=20
             )
 
-            # response.raise_for_status()
+            response.raise_for_status()
             result = response.json()
-            logger.info(f"MPESA RAW RESPONSE: {result}")
-
-            if response.status_code != 200:
-                logger.error(f"STK ERROR {response.status_code}: {result}")
-                return {
-                    "success": False,
-                    "message": result
-                }
 
             if result.get("ResponseCode") == "0":
                 return {
