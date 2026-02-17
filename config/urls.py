@@ -85,6 +85,7 @@ urlpatterns = [
     path('admin-panel/liquor/orders/', admin_views.liquor_orders, name='liquor_orders'),
     path('admin-panel/liquor/analytics/', admin_views.liquor_analytics, name='liquor_analytics'),
     path('admin-panel/liquor/orders/<str:order_number>/', admin_views.liquor_order_detail, name='liquor_order_detail'),
+    path('admin-panel/api/orders/mpesa-details/', admin_views.mpesa_payment_details, name='admin_mpesa_details'),
 
     # Menu management
     path('admin-panel/menu/', admin_views.admin_menu, name='admin_menu'),

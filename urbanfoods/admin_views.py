@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import user_passes_test
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.hashers import check_password
@@ -69,6 +69,37 @@ def admin_login(request):
 
     # For non-AJAX GET requests, render the login page
     return render(request, 'custom_admin/login.html')
+
+@staff_member_required
+@require_GET
+def mpesa_payment_details(request):
+    order_number = request.GET.get('order_number')
+    if not order_number:
+        return JsonResponse({'success': False, 'message': 'order_number required'}, status=400)
+
+    try:
+        order = Order.objects.get(order_number=order_number)
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
+
+    try:
+        payment = order.mpesa_transactions   # OneToOneField / ForeignKey from Order → MpesaPayment
+        data = {
+            'amount': str(payment.amount),
+            'mpesa_receipt_number': payment.mpesa_receipt_number,
+            'checkout_request_id': payment.checkout_request_id,
+            'phone_number': payment.phone_number,
+            'order_number': order.order_number,
+            'status': payment.status,           # 'completed' | 'pending' | 'failed' | 'refunded'
+            'result_description': payment.result_desc,
+            'transaction_date': payment.transaction_date.isoformat() if payment.transaction_date else None,
+            'created_at': payment.created_at.isoformat(),
+            # 'prompt_time': payment.prompt_time.isoformat() if getattr(payment, 'prompt_time', None) else None,
+            #'callback_received_at': payment.callback_received_at.isoformat() if getattr(payment, 'callback_received_at', None) else None,
+        }
+        return JsonResponse({'success': True, 'payment': data})
+    except (AttributeError, MpesaTransaction.DoesNotExist):
+        return JsonResponse({'success': True, 'payment': None})
 
 
 # ==================== ADMIN DASHBOARD ====================

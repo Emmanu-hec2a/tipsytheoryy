@@ -1,221 +1,201 @@
 import requests
-import json
 import base64
 from datetime import datetime, timedelta
+from decimal import Decimal
 from django.conf import settings
 import os
+import logging
+from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
+
 
 class MpesaIntegration:
-    """
-    MPESA Integration for Urban Foods Cafe
-    Supports both Till Numbers (Buy Goods) and Paybill Numbers
-    """
 
     def __init__(self):
-        # MPESA API credentials from environment variables
+
         self.consumer_key = os.environ.get('MPESA_CONSUMER_KEY')
         self.consumer_secret = os.environ.get('MPESA_CONSUMER_SECRET')
-        self.shortcode = os.environ.get('MPESA_SHORTCODE')  # Default sandbox shortcode
         self.passkey = os.environ.get('MPESA_PASSKEY')
 
-        #Paybill configuration for Liqour Store
-        self.paybill_number = os.environ.get('MPESA_PAYBILL_NUMBER')  # Paybill number for liquor store
-        self.account_number = os.environ.get('ACCOUNT_NUMBER')  # Account number for paybill
+        self.paybill_number = os.environ.get('MPESA_PAYBILL_NUMBER')
+        self.till_number = os.environ.get('MPESA_TILL_NUMBER')
 
-        #Till configuration for Food Store & Grocery Store
-        self.till_number = os.environ.get('MPESA_TILL_NUMBER')  # Till number for food and grocery store
-
-        # API endpoints
         is_production = os.environ.get('MPESA_PRODUCTION', 'false').lower() == 'true'
-        self.base_url = 'https://api.safaricom.co.ke' if is_production else 'https://sandbox.safaricom.co.ke'
+
+        self.base_url = (
+            'https://api.safaricom.co.ke'
+            if is_production
+            else 'https://sandbox.safaricom.co.ke'
+        )
+
         self.access_token_url = f'{self.base_url}/oauth/v1/generate?grant_type=client_credentials'
         self.stk_push_url = f'{self.base_url}/mpesa/stkpush/v1/processrequest'
         self.stk_query_url = f'{self.base_url}/mpesa/stkpushquery/v1/query'
 
-        self.access_token = None
-        self.token_expires_at = None
-
+    # =========================
+    # ACCESS TOKEN
+    # =========================
     def get_access_token(self):
-        """Get MPESA API access token"""
-        if self.access_token and self.token_expires_at and datetime.now() < self.token_expires_at:
-            return self.access_token
+        token = cache.get('mpesa_access_token')
+        if token:
+            return token
 
         try:
             response = requests.get(
                 self.access_token_url,
-                auth=(self.consumer_key, self.consumer_secret)
+                auth=(self.consumer_key, self.consumer_secret),
+                timeout=15
             )
-
-            print("====== MPESA STK PUSH ======")
-            print("STATUS:", response.status_code)
-            print("RESPONSE:", response.text)
-            
-            print("============================")
             response.raise_for_status()
-
             data = response.json()
-            self.access_token = data['access_token']
 
-            # Token expires in 3599 seconds (1 hour)
-            self.token_expires_at = datetime.now() + timedelta(seconds=3599)
+            token = data['access_token']
+            cache.set('mpesa_access_token', token, timeout=3500)
 
-            return self.access_token
-        except Exception as e:
-            print(f"Error getting access token: {e}")
+            return token
+
+        except Exception:
+            logger.exception("Failed to obtain MPESA access token")
             return None
 
-    def generate_password(self, timestamp):
-        """Generate password for STK push"""
-        password_str = f"{self.shortcode}{self.passkey}{timestamp}"
-        password = base64.b64encode(password_str.encode()).decode()
-        return password
+    # =========================
+    # PASSWORD GENERATION
+    # =========================
+    def generate_password(self, shortcode, timestamp):
+        data_to_encode = f"{shortcode}{self.passkey}{timestamp}"
+        return base64.b64encode(data_to_encode.encode()).decode()
 
-    def initiate_stk_push(self, phone_number, amount, account_reference, transaction_desc, store_type='food'):
+    # =========================
+    # STK PUSH
+    # =========================
+    def initiate_stk_push(self, phone_number, amount, account_reference,
+                          transaction_desc, store_type='liquor'):
+
+        access_token = self.get_access_token()
+        if not access_token:
+            return {'success': False, 'message': 'Access token error'}
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+
+        if store_type == 'liquor':
+            shortcode = self.paybill_number
+            transaction_type = "CustomerPayBillOnline"
+            account_ref = account_reference
+        else:
+            shortcode = self.till_number
+            transaction_type = "CustomerBuyGoodsOnline"
+            account_ref = account_reference[:12]
+
+        password = self.generate_password(shortcode, timestamp)
+
+        payload = {
+            "BusinessShortCode": shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": transaction_type,
+            "Amount": int(Decimal(str(amount))),
+            "PartyA": phone_number,
+            "PartyB": shortcode,
+            "PhoneNumber": phone_number,
+            "CallBackURL": os.environ.get('MPESA_CALLBACK_URL'),
+            "AccountReference": account_ref,
+            "TransactionDesc": transaction_desc[:13]
+        }
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+
         try:
-            access_token = self.get_access_token()
-            if not access_token:
-                return {'success': False, 'message': 'Failed to get access token'}
+            response = requests.post(
+                self.stk_push_url,
+                json=payload,
+                headers=headers,
+                timeout=20
+            )
 
-            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-
-            #Check store type to determine whether to use Paybill or Till
-            if store_type == 'liquor':
-                party_b = self.paybill_number
-                transaction_type = "CustomerPayBillOnline"
-                shortcode = self.paybill_number
-                passkey = self.passkey
-                account_ref = self.account_number
-            else:
-                party_b = self.till_number
-                transaction_type = "CustomerBuyGoodsOnline"
-                shortcode = self.till_number
-                passkey = self.passkey
-                account_ref = account_reference[:12]  # Limit to 12 characters for till
-
-            password = self.generate_password(shortcode, passkey, timestamp)
-
-            payload = {
-                "BusinessShortCode": self.shortcode,
-                "Password": password,
-                "Timestamp": timestamp,
-                "TransactionType": transaction_type,
-                "Amount": max(1, int(amount)),
-                "PartyA": phone_number,
-                "PartyB": party_b,
-                "PhoneNumber": phone_number,
-                "CallBackURL": os.environ.get(
-                    'MPESA_CALLBACK_URL',
-                    'https://urbandreamcafe.up.railway.app/mpesa/callback/'
-                ),
-                "AccountReference": account_ref,
-                "TransactionDesc": transaction_desc
-            }
-
-            headers = {
-                'Authorization': f'Bearer {access_token}',
-                'Content-Type': 'application/json'
-            }
-
-            response = requests.post(self.stk_push_url, json=payload, headers=headers)
-
-            print("====== MPESA STK PUSH ======")
-            print("STATUS:", response.status_code)
-            print("Store Type:", store_type)
-            print("Transaction Type:", transaction_type)
-            print("Status:", response.status_code)
-            print("============================")
             response.raise_for_status()
-
             result = response.json()
 
-            if result.get('ResponseCode') == '0':
+            if result.get("ResponseCode") == "0":
                 return {
-                    'success': True,
-                    'checkout_request_id': result.get('CheckoutRequestID'),
-                    'customer_message': result.get('CustomerMessage'),
-                    'payment_type': 'paybill' if store_type == 'liquor' else 'till'
+                    "success": True,
+                    "checkout_request_id": result.get("CheckoutRequestID"),
+                    "customer_message": result.get("CustomerMessage")
                 }
 
             return {
-                'success': False,
-                'message': result.get('ResponseDescription', 'STK Push failed')
+                "success": False,
+                "message": result.get("ResponseDescription", "STK push failed")
             }
 
-        except requests.exceptions.RequestException as e:
-            return {'success': False, 'message': f'Network error: {e.response.text if e.response else str(e)}'}
+        except requests.exceptions.RequestException:
+            logger.exception("STK Push network error")
+            return {"success": False, "message": "Network error"}
 
+    # =========================
+    # STK QUERY
+    # =========================
     def query_stk_status(self, checkout_request_id):
-        """Query STK push payment status"""
+
+        access_token = self.get_access_token()
+        if not access_token:
+            return {'success': False, 'message': 'Access token error'}
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        shortcode = self.paybill_number  # or till, depending on your logic
+        password = self.generate_password(shortcode, timestamp)
+
+        payload = {
+            "BusinessShortCode": shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "CheckoutRequestID": checkout_request_id
+        }
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+
         try:
-            access_token = self.get_access_token()
-            if not access_token:
-                return {'success': False, 'message': 'Failed to get access token'}
+            response = requests.post(
+                self.stk_query_url,
+                json=payload,
+                headers=headers,
+                timeout=20
+            )
 
-            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            password = self.generate_password(timestamp)
-
-            payload = {
-                "BusinessShortCode": self.shortcode,
-                "Password": password,
-                "Timestamp": timestamp,
-                "CheckoutRequestID": checkout_request_id
-            }
-
-            headers = {
-                'Authorization': f'Bearer {access_token}',
-                'Content-Type': 'application/json'
-            }
-
-            response = requests.post(self.stk_query_url, json=payload, headers=headers)
-
-            print("====== MPESA STK PUSH ======")
-            print("STATUS:", response.status_code)
-            print("RESPONSE:", response.text)
-            print("PAYLOAD:", payload)
-            print("============================")
             response.raise_for_status()
-
             result = response.json()
 
             return {
-                'success': True,
-                'response_code': result.get('ResponseCode'),
-                'response_description': result.get('ResponseDescription'),
-                'result_code': result.get('ResultCode'),
-                'result_desc': result.get('ResultDesc'),
-                'callback_metadata': result.get('CallbackMetadata')
+                "success": True,
+                "response_code": result.get("ResponseCode"),
+                "result_code": result.get("ResultCode"),
+                "result_desc": result.get("ResultDesc")
             }
 
-        except Exception as e:
-            return {'success': False, 'message': f'Error querying status: {str(e)}'}
+        except requests.exceptions.RequestException:
+            logger.exception("STK Query error")
+            return {"success": False, "message": "Query network error"}
 
+    # =========================
+    # PHONE FORMATTER
+    # =========================
     def format_phone_number(self, phone_number):
-        """Format phone number to MPESA format (254XXXXXXXXX)"""
-        phone = str(phone_number).strip()
 
-        # Remove any spaces, hyphens, or brackets
-        phone = ''.join(c for c in phone if c.isdigit())
+        phone = ''.join(filter(str.isdigit, str(phone_number)))
 
-        # Handle different formats
         if phone.startswith('0') and len(phone) == 10:
-            # Format: 07XXXXXXXX or 01XXXXXXXX -> 2547XXXXXXXX or 2541XXXXXXXX
-            phone = '254' + phone[1:]
-        elif phone.startswith('+254') and len(phone) == 13:
-            # Format: +2547XXXXXXXX -> 2547XXXXXXXX
-            phone = phone[1:]
+            return '254' + phone[1:]
         elif phone.startswith('254') and len(phone) == 12:
-            # Already in correct format
-            pass
-        elif len(phone) == 9 and phone.startswith('7'):
-            # Format: 7XXXXXXXX -> 2547XXXXXXXX (missing leading 0)
-            phone = '254' + phone
-        elif len(phone) == 9 and phone.startswith('1'):
-            # Format: 1XXXXXXXX -> 2541XXXXXXXX (missing leading 0)
-            phone = '254' + phone
+            return phone
+        elif len(phone) == 9:
+            return '254' + phone
         else:
-            raise ValueError('Invalid phone number format. Must be 10 digits starting with 0, 9 digits starting with 7 or 1, 12 digits starting with 254, or 13 digits starting with +254')
-
-        return phone
-
-# Global instance
+            raise ValueError("Invalid phone number format")
+        
 mpesa = MpesaIntegration()

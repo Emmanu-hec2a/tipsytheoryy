@@ -1180,7 +1180,7 @@
                         Cancel
                     </button>
                     <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold">
-                        Pay via Till
+                        Pay via M-PESA
                     </button>
                 </div>
             </form>
@@ -1188,7 +1188,7 @@
     </div>
 
     <!-- Till Payment Modal -->
-    <div id="tillPaymentModal"
+    <!-- <div id="tillPaymentModal"
         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg max-w-md w-full p-6 fade-in">
             <div class="text-center">
@@ -1233,7 +1233,7 @@
                 </p>
             </div>
         </div>
-    </div>
+    </div> -->
 
 
     <!-- Payment Processing Modal -->
@@ -1707,7 +1707,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const paymentNote = document.getElementById('paymentNote');
             if (paymentNote) {
-                paymentNote.innerHTML = '📱 MPESA Payment';
+                paymentNote.innerHTML = 'MPESA Payment';
             }
         });
 
@@ -1726,80 +1726,60 @@
 
 
         // Handle checkout form submission
-        document.getElementById('checkoutForm').addEventListener('submit', function (e) {
+        document.getElementById('checkoutForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            // Validate form first
             if (!this.checkValidity()) {
                 this.reportValidity();
                 return;
             }
 
+            const hostelSelect = document.getElementById('hostelSelect');
+            const customHostelInput = document.getElementById('customHostel');
+
+            const hostelValue =
+                hostelSelect.value === 'other'
+                    ? customHostelInput.value
+                    : hostelSelect.value;
+
+            const formData = {
+                hostel: hostelValue,
+                room_number: document.getElementById('roomNumber').value,
+                phone_number: document.getElementById('phoneNumber').value,
+                delivery_notes: document.getElementById('deliveryNotes').value,
+                payment_method: 'mpesa'
+            };
+
             closeCheckout();
-
-            // Set till number
-            document.getElementById('tillNumber').innerText = getTillNumber();
-
-            // Show till modal
-            document.getElementById('tillPaymentModal').classList.remove('hidden');
-        });
-
-        function closeTillModal() {
-            document.getElementById('tillPaymentModal').classList.add('hidden');
-        }
-
-        async function confirmTillPayment() {
-            const hostel = document.getElementById('hostelSelect').value;
-            const customHostel = document.getElementById('customHostel')?.value;
-            const roomNumber = document.getElementById('roomNumber').value;
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            const deliveryNotes = document.getElementById('deliveryNotes').value;
-
-            const finalHostel = hostel === 'other' ? customHostel : hostel;
-
-            if (!finalHostel || !roomNumber || !phoneNumber) {
-                showAlert('Please fill all required fields.', 'warning');
-                return;
-            }
+            showPaymentProcessingModal(formData.phone_number, cartData.total);
 
             try {
-                showStoreLoading();
-
                 const response = await fetch('/api/order/place/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': getCookie('csrftoken')
                     },
-                    body: JSON.stringify({
-                        hostel: finalHostel,
-                        room_number: roomNumber,
-                        phone_number: phoneNumber,
-                        delivery_notes: deliveryNotes,
-                        payment_method: 'cash'
-                    })
+                    body: JSON.stringify(formData)
                 });
 
                 const data = await response.json();
 
-                hideStoreLoading();
-
                 if (data.success) {
-                    closeCheckout();
-                    document.getElementById('successOrderNumber').innerText = data.order_number;
-                    document.getElementById('successDeliveryTime').innerText = '15 mins';
-                    document.getElementById('paymentSuccessModal').classList.remove('hidden');
-                    showAlert('Order placed successfully! Check your email inbox/spam folder for order details', 'success');
+                    pollPaymentStatus(
+                        data.checkout_request_id,
+                        data.order_number
+                    );
                 } else {
-                    showAlert(data.message || 'Order could not be placed.', 'danger');
+                    document.getElementById('paymentProcessingModal').classList.add('hidden');
+                    showPaymentFailedModal(data.message || "Payment failed.");
                 }
 
             } catch (error) {
-                hideStoreLoading();
-                console.error(error);
-                showAlert('Network error. Please try again.', 'danger');
+                document.getElementById('paymentProcessingModal').classList.add('hidden');
+                showPaymentFailedModal("Network error. Please try again.");
             }
-        }
+        });
 
         // document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
         //     e.preventDefault();

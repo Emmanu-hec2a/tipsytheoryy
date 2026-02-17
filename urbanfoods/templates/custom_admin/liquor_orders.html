@@ -7,28 +7,250 @@
 
 {% block breadcrumb_active %}Liquor Orders{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ── Payment Badge Colours ── */
+  .payment-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .payment-badge.paid       { background: #d1fae5; color: #065f46; }
+  .payment-badge.pending    { background: #fef3c7; color: #92400e; }
+  .payment-badge.failed     { background: #fee2e2; color: #991b1b; }
+  .payment-badge.refunded   { background: #ede9fe; color: #5b21b6; }
+  .payment-badge.cod        { background: #e0f2fe; color: #0369a1; }
+
+  /* ── M-Pesa Modal ── */
+  #mpesaModal .modal-content {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,.18);
+  }
+
+  #mpesaModal .modal-header {
+    background: linear-gradient(135deg, #00b300 0%, #007a00 100%);
+    padding: 22px 28px;
+    border: none;
+  }
+
+  #mpesaModal .modal-header .modal-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #mpesaModal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: .8;
+  }
+
+  /* M-Pesa logo strip */
+  .mpesa-logo-strip {
+    background: #f0fdf4;
+    border-bottom: 1px solid #bbf7d0;
+    padding: 12px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mpesa-logo-strip .mpesa-logo-text {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #00b300;
+    letter-spacing: -1px;
+    font-family: 'Georgia', serif;
+  }
+  .mpesa-logo-strip .mpesa-logo-text span { color: #cc0000; }
+  .mpesa-logo-strip small {
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+
+  /* Detail grid */
+  .mpesa-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 24px 28px;
+  }
+  .mpesa-detail-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .mpesa-detail-item.full-width {
+    grid-column: 1 / -1;
+  }
+  .mpesa-detail-item .detail-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+  .mpesa-detail-item .detail-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+    word-break: break-all;
+  }
+  .mpesa-detail-item .detail-value.amount {
+    font-size: 1.4rem;
+    color: #00b300;
+  }
+  .mpesa-detail-item .detail-value.highlight {
+    font-family: 'Courier New', monospace;
+    color: #4f46e5;
+    font-size: 1rem;
+  }
+
+  /* Status pill inside modal */
+  .mpesa-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .mpesa-status-pill.status-completed { background: #d1fae5; color: #065f46; }
+  .mpesa-status-pill.status-pending   { background: #fef3c7; color: #92400e; }
+  .mpesa-status-pill.status-failed    { background: #fee2e2; color: #991b1b; }
+
+  /* Timeline */
+  .mpesa-timeline {
+    padding: 0 28px 24px;
+  }
+  .mpesa-timeline h6 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9ca3af;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .timeline-item {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .timeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+    background: #d1d5db;
+  }
+  .timeline-dot.active { background: #00b300; }
+  .timeline-dot.failed { background: #ef4444; }
+  .timeline-content .tl-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+  }
+  .timeline-content .tl-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+
+  /* Action row */
+  .mpesa-modal-actions {
+    padding: 0 28px 24px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-mpesa-resend {
+    background: linear-gradient(135deg, #00b300, #007a00);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: opacity .2s;
+  }
+  .btn-mpesa-resend:hover { opacity: .88; color: #fff; }
+
+  .btn-mpesa-verify {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 9px 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background .2s;
+  }
+  .btn-mpesa-verify:hover { background: #e5e7eb; }
+
+  .btn-mpesa-refund {
+    background: #fff5f5;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 9px 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background .2s;
+  }
+  .btn-mpesa-refund:hover { background: #fee2e2; }
+
+  /* table tweaks */
+  #ordersTable th { white-space: nowrap; }
+  .order-items small { line-height: 1.6; }
+
+  /* loading shimmer for verify */
+  @keyframes shimmer { 0%{opacity:1}50%{opacity:.5}100%{opacity:1} }
+  .verifying { animation: shimmer 1s infinite; pointer-events: none; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0" style="color: #2d3748;">🍷 Liquor Order Management</h4>
     <div class="d-flex gap-2">
         <select class="form-select" id="statusFilter" onchange="filterOrders()">
-            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Orders</option>
-            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-            <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
-            <option value="preparing" {% if status_filter == 'preparing' %}selected{% endif %}>Preparing</option>
-            <option value="ready" {% if status_filter == 'ready' %}selected{% endif %}>Ready</option>
-            <option value="out_for_delivery" {% if status_filter == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
-            <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
-            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            <option value="all"             {% if status_filter == 'all' %}selected{% endif %}>All Orders</option>
+            <option value="pending"         {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="confirmed"       {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+            <option value="preparing"       {% if status_filter == 'preparing' %}selected{% endif %}>Preparing</option>
+            <option value="ready"           {% if status_filter == 'ready' %}selected{% endif %}>Ready</option>
+            <option value="out_for_delivery"{% if status_filter == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+            <option value="delivered"       {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+            <option value="cancelled"       {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
         </select>
         <button class="btn btn-outline-primary" onclick="refreshOrders()">
-            <i class="fas fa-sync-alt me-1"></i>
-            Refresh
+            <i class="fas fa-sync-alt me-1"></i>Refresh
         </button>
     </div>
 </div>
 
-<!-- Orders Table -->
+<!-- ── Orders Table ── -->
 <div class="admin-card">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -39,6 +261,7 @@
                         <th>Customer</th>
                         <th>Items</th>
                         <th>Total</th>
+                        <th>Payment</th>  <!-- ← NEW COLUMN -->
                         <th>Status</th>
                         <th>Time</th>
                         <th>Actions</th>
@@ -52,8 +275,7 @@
                         </td>
                         <td>
                             <div>
-                                <strong>{{ order.user.username }}</strong>
-                                <br>
+                                <strong>{{ order.user.username }}</strong><br>
                                 <small class="text-muted">{{ order.user.phone_number }}</small>
                             </div>
                         </td>
@@ -69,23 +291,69 @@
                         <td>
                             <strong>KES {{ order.total|floatformat:0 }}</strong>
                         </td>
+
+                        <!-- ── Payment cell ── -->
+                        <td>
+                            {% if order.payment %}
+                                {% with p=order.payment %}
+                                {% if p.status == 'completed' %}
+                                    <span class="payment-badge paid">
+                                        <i class="fas fa-check-circle"></i> Paid
+                                    </span>
+                                {% elif p.status == 'failed' %}
+                                    <span class="payment-badge failed">
+                                        <i class="fas fa-times-circle"></i> Failed
+                                    </span>
+                                <!-- {% elif p.status == 'refunded' %}
+                                    <span class="payment-badge refunded">
+                                        <i class="fas fa-undo"></i> Refunded
+                                    </span> -->
+                                {% else %}
+                                    <span class="payment-badge pending">
+                                        <i class="fas fa-clock"></i> Pending
+                                    </span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted mt-1 d-block">M-Pesa</small>
+                                {% endwith %}
+                            {% elif order.payment_method == 'cod' %}
+                                <span class="payment-badge cod">
+                                    <i class="fas fa-money-bill-wave"></i> COD
+                                </span>
+                            {% else %}
+                                <span class="payment-badge pending">
+                                    <i class="fas fa-clock"></i> Unpaid
+                                </span>
+                            {% endif %}
+                        </td>
+                        <!-- ── /Payment cell ── -->
+
                         <td>
                             <span class="badge status-{{ order.status }} fs-6">{{ order.get_status_display }}</span>
                         </td>
                         <td>
-                            <div>
-                                <small>{{ order.created_at|date:"M d, H:i" }}</small>
-                                {% if order.estimated_delivery %}
-                                <br>
-                                <small class="text-muted">Est: {{ order.estimated_delivery|date:"H:i" }}</small>
-                                {% endif %}
-                            </div>
+                            <small>{{ order.created_at|date:"M d, H:i" }}</small>
+                            {% if order.estimated_delivery %}
+                            <br><small class="text-muted">Est: {{ order.estimated_delivery|date:"H:i" }}</small>
+                            {% endif %}
                         </td>
+
+                        <!-- ── Actions ── -->
                         <td>
                             <div class="btn-group" role="group">
-                                <a href="{% url 'admin_order_detail' order.order_number %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'admin_order_detail' order.order_number %}" class="btn btn-sm btn-outline-primary" title="View order">
                                     <i class="fas fa-eye"></i>
                                 </a>
+
+                                <!-- M-Pesa button (shown when payment exists OR order is not COD) -->
+                                {% if order.payment_method != 'cod' %}
+                                <button class="btn btn-sm btn-outline-success"
+                                        title="M-Pesa Payment Details"
+                                        onclick="openMpesaModal('{{ order.order_number }}')">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </button>
+                                {% endif %}
+
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                         <i class="fas fa-cog"></i>
@@ -129,7 +397,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-5">
+                        <td colspan="8" class="text-center py-5">
                             <i class="fas fa-wine-bottle fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No liquor orders found</h5>
                             <p class="text-muted">Liquor orders will appear here once customers start placing them.</p>
@@ -142,7 +410,116 @@
     </div>
 </div>
 
-<!-- Order Status Update Modal -->
+
+<!-- ══════════════════════════════════════════
+     M-PESA PAYMENT DETAILS MODAL
+     ══════════════════════════════════════════ -->
+<div class="modal fade" id="mpesaModal" tabindex="-1" aria-labelledby="mpesaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+        <div class="modal-content">
+
+            <!-- Header -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="mpesaModalLabel">
+                    <i class="fas fa-mobile-alt"></i>
+                    M-Pesa Payment Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- Logo strip -->
+            <div class="mpesa-logo-strip">
+                <div class="mpesa-logo-text">M-<span>PESA</span></div>
+                <div>
+                    <div style="font-weight:700;font-size:.85rem;color:#374151;">Safaricom M-Pesa</div>
+                    <small>Mobile Money Transaction</small>
+                </div>
+                <div class="ms-auto" id="mpesaStatusBadge">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+
+            <!-- Loading state -->
+            <div id="mpesaLoading" class="text-center py-5" style="display:none;">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="text-muted mt-3 mb-0">Fetching payment details…</p>
+            </div>
+
+            <!-- No payment state -->
+            <div id="mpesaNoPayment" style="display:none;">
+                <div class="text-center py-4 px-4">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3" style="opacity:.4;"></i>
+                    <h6 class="text-muted">No M-Pesa transaction found</h6>
+                    <p class="text-muted small mb-0">Payment has not been initiated or is still pending.</p>
+                </div>
+                <div class="mpesa-modal-actions justify-content-center">
+                    <button class="btn-mpesa-resend" id="btnResendStk" onclick="resendStkPush()">
+                        <i class="fas fa-paper-plane"></i> Resend STK Push
+                    </button>
+                </div>
+            </div>
+
+            <!-- Payment details (filled dynamically) -->
+            <div id="mpesaDetails" style="display:none;">
+                <div class="mpesa-detail-grid">
+                    <div class="mpesa-detail-item full-width">
+                        <div class="detail-label">Amount Paid</div>
+                        <div class="detail-value amount" id="mpesaAmount">—</div>
+                    </div>
+                    <div class="mpesa-detail-item">
+                        <div class="detail-label">Transaction ID (Receipt)</div>
+                        <div class="detail-value highlight" id="mpesaReceiptNo">—</div>
+                    </div>
+                    <div class="mpesa-detail-item">
+                        <div class="detail-label">Checkout Request ID</div>
+                        <div class="detail-value highlight" id="mpesaCheckoutId">—</div>
+                    </div>
+                    <div class="mpesa-detail-item">
+                        <div class="detail-label">Phone Number</div>
+                        <div class="detail-value" id="mpesaPhone">—</div>
+                    </div>
+                    <div class="mpesa-detail-item">
+                        <div class="detail-label">Order Reference</div>
+                        <div class="detail-value" id="mpesaOrderRef">—</div>
+                    </div>
+                    <div class="mpesa-detail-item">
+                        <div class="detail-label">Transaction Date</div>
+                        <div class="detail-value" id="mpesaDate">—</div>
+                    </div>
+                    <div class="mpesa-detail-item">
+                        <div class="detail-label">Result Description</div>
+                        <div class="detail-value" id="mpesaResultDesc">—</div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="mpesa-timeline">
+                    <h6>Transaction History</h6>
+                    <div id="mpesaTimeline">
+                        <!-- filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="mpesa-modal-actions">
+                    <button class="btn-mpesa-verify" id="btnVerify" onclick="verifyPayment()">
+                        <i class="fas fa-search-dollar"></i> Verify with Safaricom
+                    </button>
+                    <button class="btn-mpesa-resend" id="btnResend2" onclick="resendStkPush()" style="display:none;">
+                        <i class="fas fa-paper-plane"></i> Resend STK Push
+                    </button>
+                    <button class="btn-mpesa-refund" id="btnRefund" onclick="initiateRefund()" style="display:none;">
+                        <i class="fas fa-undo-alt"></i> Initiate Refund
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ── Order Status Update Modal ── -->
 <div class="modal fade" id="statusUpdateModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -166,7 +543,7 @@
     </div>
 </div>
 
-<!-- Cancel Order Modal -->
+<!-- ── Cancel Order Modal ── -->
 <div class="modal fade" id="cancelOrderModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -201,128 +578,263 @@
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
-let currentOrderNumber = null;
-let currentNewStatus = null;
+    /* ─────────────────────────────────────────────
+    Shared state
+    ───────────────────────────────────────────── */
+    let currentOrderNumber = null;
+    let currentNewStatus = null;
+    let currentMpesaData = null;   // cached payment data for the open modal
 
-function filterOrders() {
-    const status = document.getElementById('statusFilter').value;
-    window.location.href = `?status=${status}`;
-}
+    /* ─────────────────────────────────────────────
+    Order-list helpers
+    ───────────────────────────────────────────── */
+    function filterOrders() {
+        const status = document.getElementById('statusFilter').value;
+        window.location.href = `?status=${status}`;
+    }
+    function refreshOrders() { window.location.reload(); }
 
-function refreshOrders() {
-    window.location.reload();
-}
+    /* ─────────────────────────────────────────────
+    Order-status modal
+    ───────────────────────────────────────────── */
+    function updateOrderStatus(orderNumber, newStatus) {
+        currentOrderNumber = orderNumber;
+        currentNewStatus = newStatus;
+        new bootstrap.Modal(document.getElementById('statusUpdateModal')).show();
+    }
 
-function updateOrderStatus(orderNumber, newStatus) {
-    currentOrderNumber = orderNumber;
-    currentNewStatus = newStatus;
+    document.getElementById('confirmStatusUpdate').addEventListener('click', function () {
+        const notes = document.getElementById('statusNotes').value;
+        const button = this;
+        const originalText = showLoading(button);
 
-    const modal = new bootstrap.Modal(document.getElementById('statusUpdateModal'));
-    modal.show();
-}
-
-function cancelOrder(orderNumber) {
-    currentOrderNumber = orderNumber;
-
-    const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
-    modal.show();
-}
-
-document.getElementById('confirmStatusUpdate').addEventListener('click', function() {
-    const notes = document.getElementById('statusNotes').value;
-
-    const button = this;
-    const originalText = showLoading(button);
-
-    fetch('/admin-panel/api/orders/update-status/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
-        },
-        body: JSON.stringify({
-            order_number: currentOrderNumber,
-            status: currentNewStatus,
-            notes: notes
+        fetch('/admin-panel/api/orders/update-status/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            body: JSON.stringify({ order_number: currentOrderNumber, status: currentNewStatus, notes })
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('Failed to update order status', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating order status:', error);
-        showAlert('Error updating order status', 'danger');
-    })
-    .finally(() => {
-        hideLoading(button, originalText);
-        bootstrap.Modal.getInstance(document.getElementById('statusUpdateModal')).hide();
-    });
-});
-
-document.getElementById('confirmCancelOrder').addEventListener('click', function() {
-    const reason = document.getElementById('cancelReason').value;
-    const notes = document.getElementById('cancelNotes').value;
-
-    const button = this;
-    const originalText = showLoading(button);
-
-    fetch('/admin-panel/api/orders/cancel/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCSRFToken()
-        },
-        body: JSON.stringify({
-            order_number: currentOrderNumber,
-            reason: reason + (notes ? ': ' + notes : '')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { showAlert(data.message, 'success'); setTimeout(() => location.reload(), 1000); }
+            else              { showAlert('Failed to update order status', 'danger'); }
         })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showAlert('Failed to cancel order', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error cancelling order:', error);
-        showAlert('Error cancelling order', 'danger');
-    })
-    .finally(() => {
-        hideLoading(button, originalText);
-        bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal')).hide();
+        .catch(() => showAlert('Error updating order status', 'danger'))
+        .finally(() => {
+            hideLoading(button, originalText);
+            bootstrap.Modal.getInstance(document.getElementById('statusUpdateModal')).hide();
+        });
     });
-});
 
-// Auto-refresh orders every 30 seconds
-setInterval(() => {
-    if (document.visibilityState === 'visible') {
-        // Only refresh if page is visible
+    /* ─────────────────────────────────────────────
+    Cancel-order modal
+    ───────────────────────────────────────────── */
+    function cancelOrder(orderNumber) {
+        currentOrderNumber = orderNumber;
+        new bootstrap.Modal(document.getElementById('cancelOrderModal')).show();
+    }
+
+    document.getElementById('confirmCancelOrder').addEventListener('click', function () {
+        const reason = document.getElementById('cancelReason').value;
+        const notes = document.getElementById('cancelNotes').value;
+        const button = this;
+        const originalText = showLoading(button);
+
+        fetch('/admin-panel/api/orders/cancel/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            body: JSON.stringify({ order_number: currentOrderNumber, reason: reason + (notes ? ': ' + notes : '') })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { showAlert(data.message, 'success'); setTimeout(() => location.reload(), 1000); }
+            else              { showAlert('Failed to cancel order', 'danger'); }
+        })
+        .catch(() => showAlert('Error cancelling order', 'danger'))
+        .finally(() => {
+            hideLoading(button, originalText);
+            bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal')).hide();
+        });
+    });
+
+    /* ═══════════════════════════════════════════
+    M-PESA MODAL LOGIC
+    ═══════════════════════════════════════════ */
+
+    /** Open the M-Pesa modal and fetch payment data */
+    function openMpesaModal(orderNumber) {
+        currentOrderNumber = orderNumber;
+        currentMpesaData   = null;
+
+        // Reset state
+        document.getElementById('mpesaLoading').style.display   = 'block';
+        document.getElementById('mpesaNoPayment').style.display = 'none';
+        document.getElementById('mpesaDetails').style.display   = 'none';
+        document.getElementById('mpesaStatusBadge').innerHTML   = '';
+
+        new bootstrap.Modal(document.getElementById('mpesaModal')).show();
+
+        fetch(`/admin-panel/api/orders/mpesa-details/?order_number=${orderNumber}`, {
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('mpesaLoading').style.display = 'none';
+            if (data.success && data.payment) {
+                currentMpesaData = data.payment;
+                renderMpesaDetails(data.payment);
+            } else {
+                document.getElementById('mpesaNoPayment').style.display = 'block';
+            }
+        })
+        .catch(() => {
+            document.getElementById('mpesaLoading').style.display   = 'none';
+            document.getElementById('mpesaNoPayment').style.display = 'block';
+            showAlert('Could not load payment details', 'danger');
+        });
+    }
+
+    /** Populate the modal with real payment data */
+    function renderMpesaDetails(p) {
+        // Status badge
+        const statusMap = {
+            completed : { cls: 'status-completed', icon: 'fa-check-circle',  label: 'Completed' },
+            pending   : { cls: 'status-pending',   icon: 'fa-clock',          label: 'Pending'   },
+            failed    : { cls: 'status-failed',    icon: 'fa-times-circle',   label: 'Failed'    },
+        };
+        const s = statusMap[p.status] || statusMap['pending'];
+        document.getElementById('mpesaStatusBadge').innerHTML =
+            `<span class="mpesa-status-pill ${s.cls}"><i class="fas ${s.icon}"></i> ${s.label}</span>`;
+
+        // Fields
+        document.getElementById('mpesaAmount').textContent     = `KES ${Number(p.amount).toLocaleString('en-KE', {minimumFractionDigits:2})}`;
+        document.getElementById('mpesaReceiptNo').textContent  = p.mpesa_receipt_number  || '—';
+        document.getElementById('mpesaCheckoutId').textContent = p.checkout_request_id   || '—';
+        document.getElementById('mpesaPhone').textContent      = p.phone_number           || '—';
+        document.getElementById('mpesaOrderRef').textContent   = p.order_number           || currentOrderNumber;
+        document.getElementById('mpesaDate').textContent       = p.transaction_date
+            ? new Date(p.transaction_date).toLocaleString('en-KE', { dateStyle:'medium', timeStyle:'short' })
+            : '—';
+        document.getElementById('mpesaResultDesc').textContent = p.result_description     || '—';
+
+        // Timeline
+        const timeline = buildTimeline(p);
+        document.getElementById('mpesaTimeline').innerHTML = timeline;
+
+        // Action buttons
+        const failed  = p.status === 'failed';
+        const success = p.status === 'completed';
+        document.getElementById('btnResend2').style.display = failed  ? 'flex' : 'none';
+        document.getElementById('btnRefund').style.display  = success ? 'flex' : 'none';
+
+        document.getElementById('mpesaDetails').style.display = 'block';
+    }
+
+    /** Build timeline HTML from payment object */
+    function buildTimeline(p) {
+        const events = [
+            { label: 'STK Push Initiated', time: p.created_at,          done: true   },
+            { label: 'Customer Prompted',  time: p.prompt_time,          done: !!p.prompt_time },
+            { label: 'Payment Received',   time: p.transaction_date,     done: p.status === 'completed', failed: false },
+            { label: 'Callback Received',  time: p.callback_received_at, done: !!p.callback_received_at, failed: p.status === 'failed' },
+        ];
+        return events.map(e => {
+            const dotClass = e.failed ? 'failed' : (e.done ? 'active' : '');
+            const timeStr  = e.time ? new Date(e.time).toLocaleTimeString('en-KE', {hour:'2-digit', minute:'2-digit'}) : '';
+            return `
+            <div class="timeline-item">
+                <div class="timeline-dot ${dotClass}"></div>
+                <div class="timeline-content">
+                    <div class="tl-title">${e.label}</div>
+                    ${timeStr ? `<div class="tl-time">${timeStr}</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    /* ── Verify payment with Safaricom ── */
+    function verifyPayment() {
+        const btn = document.getElementById('btnVerify');
+        btn.classList.add('verifying');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying…';
+
+        fetch('/admin-panel/api/mpesa/verify/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            body: JSON.stringify({ order_number: currentOrderNumber })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Payment verified successfully with Safaricom ✓', 'success');
+                if (data.payment) renderMpesaDetails(data.payment);
+            } else {
+                showAlert(data.message || 'Verification failed', 'warning');
+            }
+        })
+        .catch(() => showAlert('Error contacting Safaricom', 'danger'))
+        .finally(() => {
+            btn.classList.remove('verifying');
+            btn.innerHTML = '<i class="fas fa-search-dollar"></i> Verify with Safaricom';
+        });
+    }
+
+    /* ── Resend STK push ── */
+    function resendStkPush() {
+        fetch('/admin-panel/api/mpesa/resend-stk/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            body: JSON.stringify({ order_number: currentOrderNumber })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { 
+                showAlert('STK push sent to customer's phone ✓', 'success'); 
+            }
+            else{ 
+                showAlert(data.message || 'Failed to send STK push', 'danger');
+            }
+        })
+        .catch(() => showAlert('Error sending STK push', 'danger'));
+    }
+
+    /* ── Initiate refund ── */
+    function initiateRefund() {
+        if (!confirm('Initiate an M-Pesa refund for this transaction? This cannot be undone.')) return;
+
+        fetch('/admin-panel/api/mpesa/refund/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            body: JSON.stringify({ order_number: currentOrderNumber })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Refund initiated successfully ✓', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('mpesaModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert(data.message || 'Failed to initiate refund', 'danger');
+            }
+        })
+        .catch(() => showAlert('Error initiating refund', 'danger'));
+    }
+
+    /* ─────────────────────────────────────────────
+    Auto-refresh (new orders check every 30s)
+    ───────────────────────────────────────────── */
+    setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
         fetch('/admin-panel/api/orders/new/')
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success && data.new_orders_count > 0) {
-                    // Show notification about new orders
                     showAlert(`${data.new_orders_count} new liquor order(s) received!`, 'info');
-                    // Optionally refresh the page or update the table
                 }
             })
-            .catch(error => console.error('Error checking for new orders:', error));
-    }
-}, 30000);
-</script>
+            .catch(err => console.error('Error checking for new orders:', err));
+    }, 30000);
+    </script>
 {% endblock %}

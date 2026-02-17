@@ -224,7 +224,7 @@ class Order(models.Model):
     delivered_at = models.DateTimeField(null=True, blank=True)
     
     # Payment information
-    payment_method = models.CharField(max_length=10, choices=[('mpesa', 'MPESA'), ('till', 'TILL')], default='till')
+    payment_method = models.CharField(max_length=10, choices=[('mpesa', 'MPESA'), ('till', 'TILL')], default='mpesa')
     payment_status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -336,3 +336,34 @@ class PushSubscription(models.Model):
 
     def __str__(self):
         return self.endpoint
+    
+class MpesaTransaction(models.Model):
+    order = models.ForeignKey(
+        'Order',
+        on_delete=models.CASCADE,
+        related_name='mpesa_transactions'
+    )
+
+    checkout_request_id = models.CharField(max_length=50, db_index=True)
+    mpesa_receipt_number = models.CharField(
+        max_length=20,
+        unique=True,
+        null=True,
+        blank=True
+    )
+
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_date = models.CharField(max_length=20, blank=True, null=True)
+    result_code = models.IntegerField()
+    result_desc = models.TextField()
+
+    raw_callback = models.JSONField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.mpesa_receipt_number or 'PENDING'} - {self.order.order_number}"
