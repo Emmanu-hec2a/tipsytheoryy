@@ -294,13 +294,13 @@
 
                         <!-- ── Payment cell ── -->
                         <td>
-                            {% if order.payment %}
-                                {% with p=order.payment %}
-                                {% if p.status == 'completed' %}
+                            {% if order.mpesa_transactions %}
+                                {% with p=order.mpesa_transactions %}
+                                {% if p.payment_status == 'completed' %}
                                     <span class="payment-badge paid">
                                         <i class="fas fa-check-circle"></i> Paid
                                     </span>
-                                {% elif p.status == 'failed' %}
+                                {% elif p.payment_status == 'failed' %}
                                     <span class="payment-badge failed">
                                         <i class="fas fa-times-circle"></i> Failed
                                     </span>
