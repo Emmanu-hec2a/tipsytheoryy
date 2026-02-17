@@ -109,6 +109,16 @@ class MpesaIntegration:
         }
 
         try:
+            logger.info(f"""
+            ===== SANDBOX DEBUG =====
+            Shortcode: {shortcode}
+            Phone: {phone_number}
+            Amount: {amount}
+            Callback: {os.environ.get('MPESA_CALLBACK_URL')}
+            Base URL: {self.base_url}
+            =========================
+            """)
+
             response = requests.post(
                 self.stk_push_url,
                 json=payload,
