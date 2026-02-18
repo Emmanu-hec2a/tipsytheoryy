@@ -82,24 +82,32 @@ def mpesa_payment_details(request):
     except Order.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
 
-    try:
-        payment = order.mpesa_transactions   # OneToOneField / ForeignKey from Order → MpesaPayment
-        data = {
-            'amount': str(payment.amount),
-            'mpesa_receipt_number': payment.mpesa_receipt_number,
-            'checkout_request_id': payment.checkout_request_id,
-            'phone_number': payment.phone_number,
-            'order_number': order.order_number,
-            'status': payment.status,           # 'completed' | 'pending' | 'failed' | 'refunded'
-            'result_description': payment.result_desc,
-            'transaction_date': payment.transaction_date.isoformat() if payment.transaction_date else None,
-            'created_at': payment.created_at.isoformat(),
-            # 'prompt_time': payment.prompt_time.isoformat() if getattr(payment, 'prompt_time', None) else None,
-            #'callback_received_at': payment.callback_received_at.isoformat() if getattr(payment, 'callback_received_at', None) else None,
-        }
-        return JsonResponse({'success': True, 'payment': data})
-    except (AttributeError, MpesaTransaction.DoesNotExist):
+    payment = order.mpesa_transactions.order_by('-created_at').first()
+
+    if not payment:
         return JsonResponse({'success': True, 'payment': None})
+
+    # Convert result_code to status
+    if payment.result_code == 0:
+        status = 'completed'
+    elif payment.result_code is None:
+        status = 'pending'
+    else:
+        status = 'failed'
+
+    data = {
+        'amount': str(payment.amount),
+        'mpesa_receipt_number': payment.mpesa_receipt_number,
+        'checkout_request_id': payment.checkout_request_id,
+        'phone_number': payment.phone_number,
+        'order_number': order.order_number,
+        'status': status,
+        'result_description': payment.result_desc,
+        'transaction_date': payment.transaction_date,
+        'created_at': payment.created_at.isoformat(),
+    }
+
+    return JsonResponse({'success': True, 'payment': data})
 
 
 # ==================== ADMIN DASHBOARD ====================

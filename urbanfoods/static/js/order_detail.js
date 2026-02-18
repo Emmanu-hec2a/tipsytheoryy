@@ -2,6 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderNumberEl = document.getElementById('orderNumber');
     const orderNumber = orderNumberEl ? orderNumberEl.value : null;
 
+    const ratingModalEl = document.getElementById('orderRatingModal');
+
+    if (ratingModalEl) {
+        const ratingModal = new bootstrap.Modal(ratingModalEl, {
+            backdrop: 'static',   // prevents closing by clicking outside
+            keyboard: false       // prevents ESC closing
+        });
+
+        ratingModal.show();
+    }
+
     // Submit order rating and review
     const orderRatingForm = document.getElementById('orderRatingForm');
     if (orderRatingForm) {

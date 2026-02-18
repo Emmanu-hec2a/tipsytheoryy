@@ -172,30 +172,60 @@
                 </div>
             </div>
             {% if order.status == 'delivered' and not order.rating %}
-            <div class="card shadow-sm border-0 mt-4">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-star me-2"></i>Rate Your Order</h5>
+            <div class="modal fade" id="orderRatingModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">
+                    <i class="fas fa-star me-2"></i>Rate Your Order
+                    </h5>
                 </div>
-                <div class="card-body">
-                    <form id="foodReviewForm" method="POST" action="{% url 'submit_food_review' order.order_number %}" class="mt-3" novalidate>
-                        {% csrf_token %} 
-                        {% for item in order.items.all %} 
-                        <div class="food-review-item" data-food-item-id="{{ item.food_item.id }}"> 
-                            <label class="form-label fw-semibold">Rate {{ item.food_item.name }}</label> 
-                            <div class="mb-2"> 
-                                {% for i in "12345" %} 
-                                <input type="radio" id="food-{{ item.food_item.id }}-star-{{ i }}" name="rating-{{ item.food_item.id }}" value="{{ i }}"> 
-                                <label for="food-{{ item.food_item.id }}-star-{{ i }}" class="me-1">&#9733;</label> 
-                                {% endfor %} 
-                            </div> 
-                            <textarea name="comment-{{ item.food_item.id }}" class="form-control" rows="2" placeholder="Write a review (optional)"></textarea> 
-                        </div> 
-                        {% if not forloop.last %} 
-                        <hr class="my-3"> 
-                        {% endif %} {% endfor %} 
-                            <button type="submit" class="btn mt-3 text-white" style="background-color: #ea580c; border-color: #ea580c;">Submit Liqour Reviews</button> 
+
+                <div class="modal-body">
+
+                    <form id="foodReviewForm" novalidate>
+                    {% csrf_token %}
+                    {% for item in order.items.all %}
+                    <div class="food-review-item"
+                        data-food-item-id="{{ item.food_item.id }}">
+
+                        <label class="form-label fw-semibold">
+                        Rate {{ item.food_item.name }}
+                        </label>
+
+                        <div class="mb-2">
+                        {% for i in "12345" %}
+                        <input type="radio"
+                                id="food-{{ item.food_item.id }}-star-{{ i }}"
+                                name="rating-{{ item.food_item.id }}"
+                                value="{{ i }}">
+                        <label for="food-{{ item.food_item.id }}-star-{{ i }}"
+                                class="me-1">&#9733;</label>
+                        {% endfor %}
+                        </div>
+
+                        <textarea name="comment-{{ item.food_item.id }}"
+                                class="form-control"
+                                rows="2"
+                                placeholder="Write a review (optional)"></textarea>
+                    </div>
+
+                    {% if not forloop.last %}
+                    <hr class="my-3">
+                    {% endif %}
+                    {% endfor %}
+
+                    <button type="submit"
+                            class="btn mt-3 text-white"
+                            style="background-color:#ea580c;">
+                        Submit Reviews
+                    </button>
                     </form>
+
                 </div>
+                </div>
+            </div>
             </div>
             {% endif %}
         </div>

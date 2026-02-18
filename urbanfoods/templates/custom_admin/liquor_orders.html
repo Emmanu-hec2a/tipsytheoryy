@@ -348,13 +348,20 @@
                                 </a>
 
                                 <!-- M-Pesa button (shown when payment exists OR order is not COD) -->
-                                {% if order.payment_method != 'cod' %}
-                                <button class="btn btn-sm btn-outline-success"
-                                        title="M-Pesa Payment Details"
-                                        data-order-number="{{ order.order_number }}">
+                                {% if order.payment_method == 'mpesa' %}
+                                <button class="btn btn-sm btn-outline-success btn-mpesa-details"
+                                        data-order-number="{{ order.order_number }}"
+                                        title="View M-Pesa Payment Details">
+                                    <i class="fas fa-mobile-alt"></i>
+                                </button>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        disabled
+                                        title="This order was placed using Cash on Delivery">
                                     <i class="fas fa-mobile-alt"></i>
                                 </button>
                                 {% endif %}
+
 
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -667,12 +674,15 @@
 
     /** Open the M-Pesa modal and fetch payment data */
     // Attach click listeners to all M-Pesa buttons
-    document.querySelectorAll('.btn-mpesa-details').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const orderNumber = btn.dataset.orderNumber;
-            openMpesaModal(orderNumber);
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-mpesa-details').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const orderNumber = btn.dataset.orderNumber;
+                openMpesaModal(orderNumber);
+            });
         });
     });
+
 
     // Make sure openMpesaModal is still defined
     function openMpesaModal(orderNumber) {
