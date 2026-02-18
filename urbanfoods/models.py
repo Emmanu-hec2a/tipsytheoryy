@@ -338,6 +338,11 @@ class PushSubscription(models.Model):
         return self.endpoint
     
 class MpesaTransaction(models.Model):
+    EVENT_CHOICES = [
+    ('stk_initiated', 'STK Initiated'),
+    ('callback_received', 'Callback Received'),
+    ('stk_query', 'STK Query'),
+    ]
     order = models.ForeignKey(
         'Order',
         on_delete=models.CASCADE,
@@ -360,6 +365,7 @@ class MpesaTransaction(models.Model):
 
     raw_callback = models.JSONField()
 
+    event_type = models.CharField(max_length=30, choices=EVENT_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

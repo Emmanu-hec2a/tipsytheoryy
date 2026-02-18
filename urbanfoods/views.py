@@ -528,8 +528,27 @@ from django.views.decorators.http import require_http_methods
 
 from .models import Cart, MpesaTransaction, Order, OrderItem, OrderStatusHistory
 from .mpesa_utils import mpesa
+import logging, json
+from django.utils import timezone
+
+mpesa_logger = logging.getLogger("mpesa")
+
+def log_mpesa_event(event_type, user_id=None, order_number=None, phone=None, amount=None, extra=None):
+    log_data = {
+        "event_type": event_type,
+        "user_id": user_id,
+        "order_number": order_number,
+        "phone": f"+2547XXX{phone[-4:]}" if phone else None,
+        "amount": float(amount) if amount else None,
+        "timestamp": timezone.now().isoformat(),
+    }
+    if extra:
+        log_data.update(extra)
+    mpesa_logger.info(json.dumps(log_data))
+
 
 logger = logging.getLogger(__name__)
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -871,6 +890,16 @@ def mpesa_callback(request):
             raw_callback=callback_data,
         )
 
+         # Log structured
+        log_mpesa_event(
+            event_type="callback_received",
+            user_id=order.user.id,
+            order_number=order.order_number,
+            phone=str(callback_phone),
+            amount=amount,
+            extra={"checkout_request_id": checkout_request_id, "result_code": result_code, "result_desc": result_desc}
+        )
+
         # ── Payment failed ──
         if result_code != 0:
             _fail_payment(order, reason=result_desc)
@@ -949,6 +978,16 @@ def mpesa_stk_query(request):
 
     # ── Ask Safaricom ──
     result = mpesa.query_stk_status(checkout_request_id)
+
+    # Log structured
+    log_mpesa_event(
+        event_type="stk_query",
+        user_id=order.user.id,
+        order_number=order.order_number,
+        phone=order.phone_number,
+        amount=order.total,
+        extra={"checkout_request_id": checkout_request_id, "result": result}
+    )
 
     if not result.get('success'):
         return JsonResponse(result)
@@ -1035,6 +1074,16 @@ def initiate_mpesa_payment(request):
         account_reference=order.order_number,
         transaction_desc=f"Order {order.order_number}",
         store_type=order.store_type,
+    )
+
+    # Log initiation
+    log_mpesa_event(
+        event_type="stk_initiated",
+        user_id=request.user.id,
+        order_number=order.order_number,
+        phone=formatted_phone,
+        amount=int(order.total),
+        extra={"checkout_request_id": stk_result.get("checkout_request_id")}
     )
 
     if not stk_result.get('success'):

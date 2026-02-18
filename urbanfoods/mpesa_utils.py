@@ -7,6 +7,23 @@ import os
 import logging
 from django.core.cache import cache
 
+import json
+from django.utils import timezone
+
+def log_mpesa_event(event_type, user_id=None, order_number=None, phone=None, amount=None, extra=None):
+    log_data = {
+        "event_type": event_type,
+        "user_id": user_id,
+        "order_number": order_number,
+        "phone": f"+2547XXX{phone[-4:]}" if phone else None,
+        "amount": float(amount) if amount else None,
+        "timestamp": timezone.now().isoformat(),
+    }
+    if extra:
+        log_data.update(extra)
+    logger.info(json.dumps(log_data))
+
+
 logger = logging.getLogger(__name__)
 
 

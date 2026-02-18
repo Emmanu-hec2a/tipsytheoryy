@@ -241,4 +241,4 @@ MPESA_PAYBILL_NUMBER = os.environ.get('MPESA_PAYBILL_NUMBER')
 MPESA_TILL_NUMBER = os.environ.get('MPESA_TILL_NUMBER')
 ACCOUNT_NUMBER = os.environ.get('ACCOUNT_NUMBER')
 MPESA_CALLBACK_URL = os.environ.get('MPESA_CALLBACK_URL')
-MPESA_PRODUCTION = os.environ.get('MPESA_PRODUCTION', 'sandbox')  # 'True' for production, 'sandbox' for testing
+MPESA_PRODUCTION = os.environ.get('MPESA_PRODUCTION')  # 'True' for production, 'sandbox' for testing
