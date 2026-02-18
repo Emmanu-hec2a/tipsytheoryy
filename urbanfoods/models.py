@@ -365,7 +365,7 @@ class MpesaTransaction(models.Model):
 
     raw_callback = models.JSONField()
 
-    event_type = models.CharField(max_length=30, choices=EVENT_CHOICES)
+    event_type = models.CharField(max_length=30, choices=EVENT_CHOICES, default='stk_initiated')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
