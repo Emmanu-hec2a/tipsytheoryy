@@ -2,7 +2,7 @@
 // TipsyTheoryy PWA Service Worker
 // Version: 1.0.1 - Update this version number when you make changes!
 
-const CACHE_VERSION = 'v3.0.5'; // Increment this to force cache update
+const CACHE_VERSION = 'v3.0.6'; // Increment this to force cache update
 const CACHE_NAME = `tipsytheoryy-cache-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline/'; // Django URL pattern
 
