@@ -5,35 +5,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TipsyTheoryy</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>window.CURRENT_STORE_TYPE = "liquor";</script>
 
+    <title>Tipsy Theoryy – Online Liquor Delivery in Nyeri & Karatina</title>
+
+    <!-- Primary SEO -->
+    <meta name="description" content="Order liquor online in Nyeri & Karatina. Cold beers, wines, spirits & mixers delivered fast by Tipsy Theoryy.">
+    <meta name="keywords" content="liquor delivery Nyeri, liquor delivery Karatina, buy alcohol online Kenya, wine delivery Nyeri, beer delivery Karatina, online liquor store Kenya">
+    <meta name="author" content="Tipsy Theoryy">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph (Social Sharing) -->
+    <meta property="og:title" content="Tipsy Theoryy – Online Liquor Delivery in Nyeri & Karatina">
+    <meta property="og:description" content="Fast liquor delivery in Nyeri & Karatina. Order beer, wine & spirits online.">
+    <meta property="og:image" content="{% static 'images/favicon.png' %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tipsy Theoryy – Online Liquor Delivery">
+    <meta name="twitter:description" content="Order liquor online in Nyeri & Karatina. Fast doorstep delivery.">
+    <meta name="twitter:image" content="{% static 'images/seo-banner.jpg' %}">
+
+    <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ff6600">
 
+    <!-- Icons -->
     <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
 
-    <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
-    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
-    <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
-    
-    <!-- Microsoft/Edge specific -->
+    <!-- Microsoft -->
     <meta name="msapplication-TileColor" content="#ea580c">
     <meta name="msapplication-config" content="{% static 'browserconfig.xml' %}">
     <meta name="application-name" content="Tipsy Theoryy">
 
-    <!--Description-->
-    <meta name="description" content="Tipsy Theoryy - Your go-to online liqour, delivery service in Nyeri/Karatina. Enjoy refreshing drinks, and everyday essentials delivered to your doorstep. Order now for a seamless shopping experience!">
-    <meta name="keywords" content="Premium liqour, Tipsy Theoryy, Online liqour Delivery Nyeri/Karatina, Liquor Delivery Nairobi, Order liqour Online, Nyeri/Karatina Food Delivery, Fresh Groceries Nairobi, Drink Delivery Nyeri/Karatina, Fast liqour Delivery, liqour Nairobi">
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "LiquorStore",
+            "name": "Tipsy Theoryy",
+            "url": "{{ request.build_absolute_uri }}",
+            "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/favicon.png' %}",
+            "image": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/seo-banner.jpg' %}",
+            "description": "Online liquor delivery in Nyeri and Karatina. Fast doorstep delivery.",
+            "areaServed": {
+                "@type": "Place",
+                "name": "Nyeri & Karatina, Kenya"
+            },
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Nyeri",
+                "addressCountry": "KE"
+            },
+            "servesCuisine": ["Drinks", "Liquor"],
+            "priceRange": "KES"
+        }
+    </script>
 
-    <!--robot-->
-    <meta name="robots" content="index, follow">
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "{{ request.scheme }}://{{ request.get_host }}/"
+                },
+                {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "{{ category.name }}",
+                "item": "{{ request.build_absolute_uri }}"
+                }
+            ]
+        }
+    </script>
 
-    <!-- Font Awesome -->
+    <!-- CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'styles.css' %}">
     <style>
         .cart-slide {
@@ -1009,7 +1065,7 @@
         </div>
         {% endif %}
 
-        <!-- All Food Items -->
+        <!-- All Liquor Items -->
         <div class="mb-8">
             <h2 id="allItemsHeading" class="text-2xl font-bold mb-4" style="font-weight: 800; font-size: 2rem;">{% if store_type == 'liquor' %} All Drinks{% elif store_type == 'grocery' %} All Groceries{% else %}🍽️ All Meals{% endif %}</h2>
             {% if food_items %}
@@ -1037,7 +1093,7 @@
                         <p class="text-gray-600 text-sm mt-1 line-clamp-2">{{ item.description }}</p>
                         <div class="rating-section flex items-center gap-1 mt-2 flex-wrap">
                             <div class="stars-container flex items-center gap-0.5">
-                                {% for star_type in item.average_rating|star_rating %}
+                                {% for star_type in item.avg_rating|default:0|star_rating %}
                                     {% if star_type == 'full' %}
                                         <i class="fas fa-star text-yellow-400 text-xs"></i>
                                     {% elif star_type == 'half' %}
@@ -1047,8 +1103,8 @@
                                     {% endif %}
                                 {% endfor %}
                             </div>
-                            <span class="rating-value text-xs text-gray-600 font-medium">{{ item.average_rating|floatformat:1 }}</span>
-                            <span class="review-count text-xs text-gray-500">({{ item.review_count }})</span>
+                            <span class="rating-value text-xs text-gray-600 font-medium">{{ item.avg_rating|default:0|floatformat:1 }}</span>
+                            <span class="review-count text-xs text-gray-500">({{ item.reviews_count }} review{{ item.reviews_count|pluralize }})</span>
                         </div>
                         <div class="flex items-center justify-between mt-4">
                             <span class="text-orange-600 font-bold text-xl">KES {{ item.price }}</span>
@@ -1414,25 +1470,27 @@
 
         // Function to generate star rating HTML
         function generateStarRating(rating, reviewCount) {
-            if (!rating || rating === 0) {
+            rating = parseFloat(rating) || 0;
+            reviewCount = parseInt(reviewCount) || 0;
+
+            if (rating === 0) {
                 return '<span class="text-gray-400 text-sm">No ratings yet</span>';
             }
+
+            rating = Math.round(rating * 2) / 2; // round to nearest 0.5
 
             let stars = '';
             const fullStars = Math.floor(rating);
             const hasHalfStar = rating % 1 !== 0;
 
-            // Full stars
             for (let i = 0; i < fullStars; i++) {
                 stars += '<i class="fas fa-star text-yellow-400"></i>';
             }
 
-            // Half star
             if (hasHalfStar) {
                 stars += '<i class="fas fa-star-half-alt text-yellow-400"></i>';
             }
 
-            // Empty stars
             const emptyStars = 5 - Math.ceil(rating);
             for (let i = 0; i < emptyStars; i++) {
                 stars += '<i class="far fa-star text-yellow-400"></i>';
@@ -1766,6 +1824,7 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    showPaymentProcessingModal().hide()
                     showPaymentVerifyingModal()
                     pollPaymentStatus(
                         data.checkout_request_id,
@@ -1773,6 +1832,7 @@
                     );
                 } else {
                     document.getElementById('paymentProcessingModal').classList.add('hidden');
+                    showPaymentVerifyingModal().hide();
                     showPaymentFailedModal(data.message || "Payment failed.");
                 }
 

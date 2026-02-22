@@ -7,7 +7,7 @@ from django.db.models import Q, Sum, Count
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt as crsf_exempt
+from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
 import uuid
@@ -26,54 +26,60 @@ def offline(request):
     """Offline page for PWA"""
     return render(request, 'offline.html')
 
+from django.db.models import Avg, Count, Q
+
+from django.db.models import Avg, Count, Q
+
 def homepage(request):
-    """Main food catalog page"""
-    # Get store type from session or default to 'food'
     store_type = request.session.get('store_type', 'liquor')
-    
-    # Filter categories by store type
+
     categories = FoodCategory.objects.filter(store_type=store_type)
 
-    # Get filter parameters
     category_id = request.GET.get('category')
     search_query = request.GET.get('q')
 
-    # Base queryset filtered by store type
-    food_items = FoodItem.objects.filter(is_available=True, store_type=store_type)
+    food_items = FoodItem.objects.filter(is_available=True, store_type=store_type).annotate(
+        avg_rating=Avg("reviews__rating"),
+        reviews_count=Count("reviews")
+    )
 
-    # Apply filters
     if category_id:
         food_items = food_items.filter(category_id=category_id)
+
     if search_query:
         food_items = food_items.filter(
             Q(name__icontains=search_query) |
             Q(description__icontains=search_query)
         )
 
-    # Get special items filtered by store type
-    meal_of_day = FoodItem.objects.filter(is_meal_of_day=True, is_available=True, store_type=store_type).first()
-    featured_items_queryset = FoodItem.objects.filter(is_featured=True, is_available=True, store_type=store_type)[:4]
-    featured_items = list(featured_items_queryset) if featured_items_queryset else []
-    popular_items = FoodItem.objects.filter(is_available=True, store_type=store_type).order_by('-times_ordered')[:6]
+    meal_of_day = FoodItem.objects.filter(
+        is_meal_of_day=True, is_available=True, store_type=store_type
+    ).annotate(
+        avg_rating=Avg("reviews__rating"),
+        reviews_count=Count("reviews")
+    ).first()
 
-    # Cart count
-    cart_count = 0
-    if request.user.is_authenticated:
-        cart, _ = Cart.objects.get_or_create(user=request.user)
-        cart_count = cart.item_count
+    featured_items = list(
+        FoodItem.objects.filter(is_featured=True, is_available=True, store_type=store_type)
+        .annotate(avg_rating=Avg("reviews__rating"), reviews_count=Count("reviews"))[:4]
+    )
 
-    context = {
+    popular_items = FoodItem.objects.filter(
+        is_available=True, store_type=store_type
+    ).annotate(
+        avg_rating=Avg("reviews__rating"),
+        reviews_count=Count("reviews")
+    ).order_by('-times_ordered')[:6]
+
+    return render(request, 'homepage.html', {
         'categories': categories,
         'food_items': food_items,
         'meal_of_day': meal_of_day,
         'featured_items': featured_items,
         'popular_items': popular_items,
-        'cart_count': cart_count,
-        'selected_category': category_id,
-        'search_query': search_query,
         'store_type': store_type,
-    }
-    return render(request, 'homepage.html', context)
+    })
+
 
 @require_http_methods(["POST"])
 def switch_store(request):
@@ -325,10 +331,12 @@ def order_detail(request, order_number):
     """View specific order details"""
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
     status_history = order.status_history.all()
+    has_food_reviews = FoodReview.objects.filter(order=order).exists()
 
     context = {
         'order': order,
         'status_history': status_history,
+        "has_food_reviews": has_food_reviews
     }
     return render(request, 'order_detail.html', context)
 
@@ -370,52 +378,80 @@ def profile(request):
 @login_required
 @require_http_methods(["POST"])
 def rate_order(request, order_number):
-    """Rate and review a delivered order"""
     order = get_object_or_404(Order, order_number=order_number, user=request.user, status='delivered')
 
     if order.rating:
-        return JsonResponse({'success': False, 'message': 'Order already rated'})
+        return JsonResponse({'success': False, 'message': 'Order already rated'}, status=400)
 
     rating = request.POST.get('rating')
     review = request.POST.get('review', '')
 
-    if not rating or not rating.isdigit() or int(rating) < 1 or int(rating) > 5:
-        return JsonResponse({'success': False, 'message': 'Invalid rating'})
+    if not rating or not rating.isdigit() or not (1 <= int(rating) <= 5):
+        return JsonResponse({'success': False, 'message': 'Invalid rating'}, status=400)
 
     order.rating = int(rating)
     order.review = review
-    order.save()
+    order.has_reviewed_items = True  # add this boolean field
+    order.save(update_fields=["rating", "review", "has_reviewed_items"])
 
-    return redirect('order_detail', order_number=order_number)
+    return JsonResponse({'success': True})
 
 # ==================== FOOD REVIEWS ====================
+
+import json
 
 @login_required
 @require_http_methods(["POST"])
 def submit_food_review(request, order_number):
-    try:
-        order = Order.objects.get(order_number=order_number, user=request.user)
-    except Order.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
-
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    
     if order.status != 'delivered':
-        return JsonResponse({'success': False, 'message': 'You can only review delivered orders'}, status=400)
+        return JsonResponse({'success': False, 'message': 'Only delivered orders can be reviewed'}, status=400)
+    
+    # Prevent duplicate submissions
+    if order.has_reviewed_items:
+        return JsonResponse({'success': False, 'message': 'Already reviewed'}, status=400)
 
-    for item in order.items.all():
-        rating = request.POST.get(f'rating-{item.food_item.id}')
-        comment = request.POST.get(f'comment-{item.food_item.id}', '')
+    try:
+        reviews = json.loads(request.body)  # JS sends JSON, not form data
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'success': False, 'message': 'Invalid data'}, status=400)
 
-        if rating:
-            if not FoodReview.objects.filter(user=request.user, food_item=item.food_item, order=order).exists():
-                FoodReview.objects.create(
-                    user=request.user,
-                    food_item=item.food_item,
-                    order=order,
-                    rating=rating,
-                    comment=comment
-                )
+    if not isinstance(reviews, list) or len(reviews) == 0:
+        return JsonResponse({'success': False, 'message': 'No reviews provided'}, status=400)
 
-    return redirect('order_detail', order_number=order.order_number)
+    created_any = False
+    for review_data in reviews:
+        food_item_id = review_data.get('food_item_id')
+        rating = review_data.get('rating')
+        comment = review_data.get('comment', '')
+
+        if not food_item_id or not rating:
+            continue
+
+        # Ensure the food item belongs to this order
+        if not order.items.filter(food_item_id=food_item_id).exists():
+            continue
+
+        try:
+            food_item = FoodItem.objects.get(id=food_item_id)
+        except FoodItem.DoesNotExist:
+            continue
+
+        obj, created = FoodReview.objects.get_or_create(
+            user=request.user,
+            food_item=food_item,
+            order=order,
+            defaults={"rating": int(rating), "comment": comment}
+        )
+        if created:
+            created_any = True
+
+    if created_any:
+        order.has_reviewed_items = True
+        order.save(update_fields=["has_reviewed_items"])
+
+    return JsonResponse({"success": True})
 
 
 # ==================== ORDER CANCELLATION ====================
@@ -447,6 +483,20 @@ def cancel_order(request, order_number):
     )
 
     return JsonResponse({'success': True, 'message': 'Order cancelled successfully'})
+
+# ================= ROBOTS.TXT VIEW =================
+from django.http import HttpResponse
+from django.views.decorators.http import require_GET
+
+@require_GET
+def robots_txt(request):
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n\n"
+        f"Sitemap: {request.scheme}://{request.get_host()}/sitemap.xml\n"
+    )
+    return HttpResponse(content, content_type="text/plain")
+
 
 # ==================== MPESA INTEGRATION ====================
 

@@ -3,48 +3,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderNumber = orderNumberEl ? orderNumberEl.value : null;
 
     const ratingModalEl = document.getElementById('orderRatingModal');
+    const alreadyRated = ratingModalEl?.dataset.rated === "true";
 
-    if (ratingModalEl) {
-        const ratingModal = new bootstrap.Modal(ratingModalEl, {
-            backdrop: 'static',   // prevents closing by clicking outside
-            keyboard: false       // prevents ESC closing
+    let ratingModal = null;
+
+    if (ratingModalEl && !alreadyRated) {
+        ratingModal = new bootstrap.Modal(ratingModalEl, {
+            backdrop: 'static',
+            keyboard: false
         });
-
         ratingModal.show();
     }
 
-    // Submit order rating and review
+    // ========================
+    // Submit overall order rating
+    // ========================
     const orderRatingForm = document.getElementById('orderRatingForm');
     if (orderRatingForm) {
         orderRatingForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const rating = orderRatingForm.querySelector('input[name="rating"]:checked');
+
+            const ratingInput = orderRatingForm.querySelector('input[name="rating"]:checked');
             const reviewEl = orderRatingForm.querySelector('textarea[name="review"]');
             const review = reviewEl ? reviewEl.value.trim() : '';
 
-            if (!rating) {
+            if (!ratingInput) {
                 alert('Please select a rating');
                 return;
             }
 
             const formData = new FormData();
-            formData.append('rating', rating.value);
+            formData.append('rating', ratingInput.value);
             formData.append('review', review);
 
             try {
-                const response = await fetch(`orders/${orderNumber}/rate/`, {
+                const response = await fetch(`/orders/${orderNumber}/rate/`, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')
-                    }
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
                 });
-                if (response.ok) {
+
+                const data = await response.json();
+
+                if (response.ok || data.success) {
                     alert('Order rating submitted successfully');
-                    orderRatingForm.querySelectorAll('input, textarea, button').forEach(el => el.disabled = true);
-                    window.location.href = '/?t=' + Date.now();
+                    orderRatingForm.querySelectorAll('input, textarea, button')
+                        .forEach(el => el.disabled = true);
+                    if (ratingModalEl) ratingModalEl.dataset.rated = "true";
+                    if (ratingModal) ratingModal.hide();
                 } else {
-                    alert('Failed to submit order rating');
+                    alert(data.message || 'Failed to submit order rating');
                 }
             } catch (error) {
                 console.error('Error submitting order rating:', error);
@@ -53,11 +61,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Submit food item reviews
+    // ========================
+    // Submit per-item reviews
+    // ========================
     const foodReviewForm = document.getElementById('foodReviewForm');
     if (foodReviewForm) {
         foodReviewForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Prevent double submission
+            const submitBtn = foodReviewForm.querySelector('button[type="submit"]');
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
 
             const reviews = [];
             const reviewItems = foodReviewForm.querySelectorAll('.food-review-item');
@@ -78,11 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (reviews.length === 0) {
                 alert('Please provide at least one rating');
+                submitBtn.disabled = false; // re-enable if validation fails
                 return;
             }
 
             try {
-                const response = await fetch(`orders/${orderNumber}/submit_review/`, {
+                const response = await fetch(`/orders/${orderNumber}/submit_review/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -90,32 +106,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     body: JSON.stringify(reviews)
                 });
+
                 const data = await response.json();
+
                 if (data.success) {
-                    alert('Food item reviews submitted successfully');
+                    alert('Reviews submitted successfully!');
                     reviewItems.forEach(item => {
-                        item.querySelectorAll('input, textarea, button').forEach(el => el.disabled = true);
+                        item.querySelectorAll('input, textarea, button')
+                            .forEach(el => el.disabled = true);
                     });
-                    window.location.href = '/?t=' + Date.now();
+                    if (ratingModalEl) ratingModalEl.dataset.rated = "true";
+                    if (ratingModal) ratingModal.hide();
                 } else {
-                    alert('Failed to submit food item reviews');
+                    alert(data.message || 'Failed to submit reviews');
+                    submitBtn.disabled = false; // re-enable on server error
                 }
             } catch (error) {
-                console.error('Error submitting food item reviews:', error);
-                alert('Error submitting food item reviews');
+                console.error('Error submitting reviews:', error);
+                alert('Error submitting reviews');
+                submitBtn.disabled = false; // re-enable on network error
             }
         });
     }
 
-    // Helper function to get CSRF token
+    // ========================
+    // Helper: get CSRF token
+    // ========================
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
                     break;
                 }
             }

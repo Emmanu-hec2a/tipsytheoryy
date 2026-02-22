@@ -23,6 +23,9 @@ urlpatterns = [
     # Order placement
     path('api/order/place/', views.place_order, name='place_order'),
 
+    #Robots.txt
+    path('robots.txt', views.robots_txt, name='robots_txt'),
+
     # MPESA integration
     path('api/mpesa/initiate/', views.initiate_mpesa_payment, name='initiate_mpesa_payment'),
     path('mpesa/callback/', views.mpesa_callback, name='mpesa_callback'),

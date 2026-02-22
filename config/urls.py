@@ -7,7 +7,13 @@ from django.templatetags.static import static as static_url
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.views.static import serve
+from urbanfoods.sitemap import StaticViewSitemap, FoodItemSitemap
+from django.contrib.sitemaps.views import sitemap
 
+sitemaps = {
+    "static": StaticViewSitemap,
+    "products": FoodItemSitemap,
+}
 # Customize Django Admin site branding
 admin.site.site_header = "UrbanDream Backend"
 admin.site.site_title = "UrbanDream Database Admin"
@@ -25,6 +31,7 @@ urlpatterns = [
     
     # ==================== PUBLIC PAGES ====================
     path('', views.homepage, name='homepage'),
+    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="sitemap"),
     
     # Authentication
     path('signup/', views.signup_view, name='signup'),
@@ -61,7 +68,6 @@ urlpatterns = [
     path('api/orders/<str:order_number>/status/', views.order_status_api, name='order_status_api'),
     
     # User profile
-    path('orders/<str:order_number>/rate/', views.rate_order, name='rate_order'),
     path('profile/', views.profile, name='profile'),
     
     # ==================== CUSTOM ADMIN DASHBOARD ====================
@@ -123,6 +129,7 @@ urlpatterns = [
     
     # Reviews management
     path('orders/<str:order_number>/submit_review/', views.submit_food_review, name='submit_food_review'),
+    path('orders/<str:order_number>/rate/', views.rate_order, name='rate_order'),
 
     # Favicon
     path('favicon.ico', RedirectView.as_view(url=static_url('images/favicon.png'), permanent=True)),

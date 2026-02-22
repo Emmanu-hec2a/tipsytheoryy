@@ -7,6 +7,104 @@
 
 {% block breadcrumb_active %}Analytics{% endblock %}
 
+{% block extrastyle %}
+<style>
+/* General text visibility */
+[data-theme="dark"] .admin-card,
+.dark-mode .admin-card {
+    background-color: #1f2933 !important;
+    color: #e5e7eb !important;
+}
+
+[data-theme="dark"] .admin-card h1,
+[data-theme="dark"] .admin-card h4,
+[data-theme="dark"] .admin-card h5,
+[data-theme="dark"] .admin-card h6,
+[data-theme="dark"] .admin-card p,
+.dark-mode .admin-card h1,
+.dark-mode .admin-card h4,
+.dark-mode .admin-card h5,
+.dark-mode .admin-card h6,
+.dark-mode .admin-card p {
+    color: #e5e7eb !important;
+}
+
+/* Muted text */
+[data-theme="dark"] .text-muted,
+.dark-mode .text-muted {
+    color: #9ca3af !important;
+}
+
+/* Card headers */
+[data-theme="dark"] .admin-card .card-header,
+.dark-mode .admin-card .card-header {
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Lists inside cards (Top Items / Customers) */
+[data-theme="dark"] .bg-light,
+.dark-mode .bg-light {
+    background-color: #111827 !important;
+    color: #e5e7eb !important;
+}
+
+/* Dropdown */
+[data-theme="dark"] .form-select,
+.dark-mode .form-select {
+    background-color: #111827;
+    color: #e5e7eb;
+    border-color: #374151;
+}
+
+/* Chart.js text */
+[data-theme="dark"] canvas {
+    filter: brightness(0.95);
+}
+
+/* Badges contrast */
+[data-theme="dark"] .badge.bg-primary,
+[data-theme="dark"] .badge.bg-success,
+.dark-mode .badge.bg-primary,
+.dark-mode .badge.bg-success {
+    color: #fff !important;
+}
+
+/* Top Items and Customers Lists in dark mode */
+[data-theme="dark"] .top-list-container,
+[data-bs-theme="dark"] .top-list-container {
+    background-color: #1f2933 !important;
+}
+
+[data-theme="dark"] .top-list-item,
+[data-bs-theme="dark"] .top-list-item {
+    background-color: #374151 !important;
+}
+
+[data-theme="dark"] .top-list-item h6,
+[data-bs-theme="dark"] .top-list-item h6 {
+    color: #f3f4f6 !important;
+}
+
+[data-theme="dark"] .top-list-item .text-muted,
+[data-bs-theme="dark"] .top-list-item .text-muted {
+    color: #9ca3af !important;
+}
+
+[data-theme="dark"] .top-list-item .text-success,
+[data-bs-theme="dark"] .top-list-item .text-success {
+    color: #22c55e !important;
+}
+
+[data-theme="dark"] .top-list-item .text-primary,
+[data-bs-theme="dark"] .top-list-item .text-primary {
+    color: #60a5fa !important;
+}
+</style>
+{% endblock %}
+
+
 {% block content %}
 <div class="container-fluid py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -115,7 +213,7 @@
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-fire me-2"></i> Top Selling Items (Food)</h5>
             </div>
-            <div class="card-body">
+            <div class="bg-dark card-body">
                 <div id="topItemsList">
                     <!-- Top items will be populated by JavaScript -->
                 </div>
@@ -129,7 +227,7 @@
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-users me-2"></i> Top Customers</h5>
             </div>
-            <div class="card-body">
+            <div class="bg-dark card-body">
                 <div id="topCustomersList">
                     <!-- Top customers will be populated by JavaScript -->
                 </div>
@@ -409,10 +507,10 @@ function initializeCharts() {
     if (topItemsData.length > 0) {
         topItemsData.forEach(item => {
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'd-flex justify-content-between align-items-center p-3 mb-2 bg-light rounded';
+            itemDiv.className = 'd-flex justify-content-between align-items-center p-3 mb-2 bg-dark rounded';
             itemDiv.innerHTML = `
                 <div>
-                    <h6 class="mb-1">${item.food_item__name}</h6>
+                    <h6 class="mb-1 text-dark">${item.food_item__name}</h6>
                     <small class="text-muted">${item.food_item__category__name}</small>
                 </div>
                 <div class="text-end">
@@ -437,10 +535,10 @@ function initializeCharts() {
     if (topCustomersData.length > 0) {
         topCustomersData.forEach(customer => {
             const customerDiv = document.createElement('div');
-            customerDiv.className = 'd-flex justify-content-between align-items-center p-3 mb-2 bg-light rounded';
+            customerDiv.className = 'd-flex justify-content-between align-items-center p-3 mb-2 bg-dark rounded';
             customerDiv.innerHTML = `
                 <div>
-                    <h6 class="mb-1">${customer.user__username}</h6>
+                    <h6 class="mb-1 text-dark">${customer.user__username}</h6>
                     <small class="text-muted">${customer.user__phone_number}</small>
                 </div>
                 <div class="text-end">

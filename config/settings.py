@@ -9,7 +9,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'd*+?8s,fldT(@.6~TtSULTd\thq~qM\*{1f{kZ&Z2Ga&/P_=~')
 
 # settings.py
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # default
@@ -18,6 +18,8 @@ SESSION_COOKIE_NAME = "sessionid"  # default for users
 # Extra config for admin
 ADMIN_SESSION_ENGINE = "django.contrib.sessions.backends.db"
 ADMIN_SESSION_COOKIE_NAME = "admin_sessionid"
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -44,6 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cloudinary_storage',  # Add before django.contrib.staticfiles
+    'django.contrib.sites',  # Required for sitemaps
+    'django.contrib.sitemaps',
     'cloudinary',
     'urbanfoods',  # Your app name
     'rest_framework',  # For API endpoints
@@ -59,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.gzip.GZipMiddleware', # Compress responses for faster load times
 ]
 
 ROOT_URLCONF = 'config.urls'
