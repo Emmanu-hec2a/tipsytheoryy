@@ -1786,7 +1786,7 @@
         // Handle checkout form submission
         document.getElementById('checkoutForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-
+            
             if (!this.checkValidity()) {
                 this.reportValidity();
                 return;
@@ -1794,11 +1794,9 @@
 
             const hostelSelect = document.getElementById('hostelSelect');
             const customHostelInput = document.getElementById('customHostel');
-
-            const hostelValue =
-                hostelSelect.value === 'other'
-                    ? customHostelInput.value
-                    : hostelSelect.value;
+            const hostelValue = hostelSelect.value === 'other' 
+                ? customHostelInput.value 
+                : hostelSelect.value;
 
             const formData = {
                 hostel: hostelValue,
@@ -1824,19 +1822,19 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showPaymentProcessingModal().hide()
-                    showPaymentVerifyingModal()
-                    pollPaymentStatus(
-                        data.checkout_request_id,
-                        data.order_number
-                    );
-                } else {
+                    // Transition from processing to verifying
                     document.getElementById('paymentProcessingModal').classList.add('hidden');
-                    showPaymentVerifyingModal().hide();
-                    showPaymentFailedModal(data.message || "Payment failed.");
+                    showPaymentVerifyingModal();
+                    
+                    // Start polling for payment confirmation
+                    pollPaymentStatus(data.checkout_request_id, data.order_number);
+                } else {
+                    // STK push failed to initiate
+                    document.getElementById('paymentProcessingModal').classList.add('hidden');
+                    showPaymentFailedModal(data.message || "Payment initiation failed.");
                 }
-
             } catch (error) {
+                console.error('Checkout error:', error);
                 document.getElementById('paymentProcessingModal').classList.add('hidden');
                 showPaymentFailedModal("Network error. Please try again.");
             }
