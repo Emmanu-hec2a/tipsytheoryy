@@ -9,7 +9,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'd*+?8s,fldT(@.6~TtSULTd\thq~qM\*{1f{kZ&Z2Ga&/P_=~')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # settings.py
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # default
@@ -27,15 +27,28 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 SITE_URL = os.environ.get('SITE_URL', 'https://tipsytheoryy.com')
 
-ALLOWED_HOSTS = ['192.168.48.227', 'localhost', '127.0.0.1', 'https://tipsytheoryy.com', 'https://liqour-tipsytheoryy.up.railway.app', '*']
+ALLOWED_HOSTS = [
+    "tipsytheoryy.com",
+    "www.tipsytheoryy.com",
+    "localhost",
+    "127.0.0.1",
+    ".railway.app",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5050",
-    'https://tipsytheoryy.com',
-    'https://liqour-tipsytheoryy.up.railway.app',
     "http://localhost:5050",
-    "http://192.168.48.227:5050",
+    "https://tipsytheoryy.com",
+    "https://www.tipsytheoryy.com",
 ]
+
+# SECURE_SSL_REDIRECT = True
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+
+
+# settings.py
+SITE_ID = 1
 
 # Application definition
 INSTALLED_APPS = [
@@ -152,10 +165,9 @@ if not DEBUG:
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Static files storage with WhiteNoise
-if DEBUG:
+if not DEBUG:
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 else:
-    
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 # Session Configuration
@@ -209,15 +221,19 @@ if not DEBUG:
     # SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    X_FRAME_OPTIONS = 'DENY'
+    SECURE_BROWSER_XSS_FILTER = True # Enable XSS protection in browsers
+    SECURE_CONTENT_TYPE_NOSNIFF = True # Prevent MIME type sniffing
+    SECURE_HSTS_SECONDS = 31536000 
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True # Enforce HSTS on all subdomains
+    SECURE_HSTS_PRELOAD = True # Allow site to be included in browser preload lists
+    X_FRAME_OPTIONS = 'DENY' # Prevent clickjacking
+    #SECURE_CONTENT_TYPE_NOSNIFF = True # Prevent MIME type sniffing
+    #SECURE_BROWSER_XSS_FILTER = True
+    #X_FRAME_OPTIONS = "DENY"
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin" # Control referrer information sent with requests
     
     # Trust Railway's proxy headers
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') 
 
 # Logging
 LOGGING = {
