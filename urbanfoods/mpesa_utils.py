@@ -130,7 +130,7 @@ class MpesaIntegration:
                 self.stk_push_url,
                 json=payload,
                 headers=headers,
-                timeout=20
+                timeout=60
             )
 
             response.raise_for_status()
@@ -148,9 +148,13 @@ class MpesaIntegration:
                 "message": result.get("ResponseDescription", "STK push failed")
             }
 
-        except requests.exceptions.RequestException:
-            logger.exception("STK Push network error")
-            return {"success": False, "message": "Network error"}
+        except requests.exceptions.ReadTimeout:
+            logger.warning("STK push timeout - waiting for callback")
+            return {
+                "success": True,
+                "pending": True,
+                "message": "Payment request sent. Check your phone."
+            }
 
     # =========================
     # STK QUERY
@@ -182,7 +186,7 @@ class MpesaIntegration:
                 self.stk_query_url,
                 json=payload,
                 headers=headers,
-                timeout=20
+                timeout=60
             )
 
             response.raise_for_status()
