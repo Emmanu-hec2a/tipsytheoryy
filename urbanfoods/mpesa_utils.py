@@ -87,7 +87,7 @@ class MpesaIntegration:
     # STK PUSH
     # =========================
     def initiate_stk_push(self, phone_number, amount, account_reference,
-                          transaction_desc, store_type='liquor'):
+                      transaction_desc, store_type='liquor'):
 
         access_token = self.get_access_token()
         if not access_token:
@@ -130,7 +130,7 @@ class MpesaIntegration:
                 self.stk_push_url,
                 json=payload,
                 headers=headers,
-                timeout=60
+                timeout=20  # ← 20 seconds is enough
             )
 
             response.raise_for_status()
@@ -155,18 +155,18 @@ class MpesaIntegration:
                 "pending": True,
                 "message": "Payment request sent. Check your phone."
             }
+        except requests.exceptions.RequestException:
+            logger.exception("STK Push network error")
+            return {"success": False, "message": "Network error"}
 
-    # =========================
-    # STK QUERY
-    # =========================
+
     def query_stk_status(self, checkout_request_id):
-
         access_token = self.get_access_token()
         if not access_token:
             return {'success': False, 'message': 'Access token error'}
 
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        shortcode = self.paybill_number  # or till, depending on your logic
+        shortcode = self.paybill_number
         password = self.generate_password(shortcode, timestamp)
 
         payload = {
@@ -186,7 +186,7 @@ class MpesaIntegration:
                 self.stk_query_url,
                 json=payload,
                 headers=headers,
-                timeout=60
+                timeout=20  # ← 20 seconds
             )
 
             response.raise_for_status()
@@ -199,6 +199,13 @@ class MpesaIntegration:
                 "result_desc": result.get("ResultDesc")
             }
 
+        except requests.exceptions.ReadTimeout:
+            logger.warning("STK query timeout for %s - payment may still be processing", checkout_request_id)
+            return {
+                "success": True,
+                "pending": True,
+                "message": "Query timeout - payment still processing"
+            }
         except requests.exceptions.RequestException:
             logger.exception("STK Query error")
             return {"success": False, "message": "Query network error"}
