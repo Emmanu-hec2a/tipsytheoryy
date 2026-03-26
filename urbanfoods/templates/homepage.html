@@ -1314,6 +1314,7 @@
     </div>
 
     <!-- Payment Verifying Modal -->
+    <!-- Payment Verifying Modal -->
     <div id="paymentVerifyingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg max-w-md w-full p-6 fade-in">
             <div class="text-center">
@@ -1323,11 +1324,24 @@
                 <h2 class="text-2xl font-bold mb-2">Verifying Payment</h2>
                 <p class="text-gray-600 mb-4">Please wait while we verify your payment...</p>
                 <div class="bg-blue-50 p-4 rounded-lg mb-4">
-                    <p class="text-sm text-gray-700">Checking payment status...</p>
+                    <p id="verifyingStatusText" class="text-sm text-gray-700">Checking payment status...</p>
                 </div>
-                <div class="flex items-center justify-center space-x-2">
+                <div class="flex items-center justify-center space-x-2 mb-4">
                     <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                     <span class="text-sm text-gray-600">This may take a few moments</span>
+                </div>
+
+                <!-- Manual check button — shown after 30s -->
+                <div id="manualCheckSection" class="hidden mt-4 border-t pt-4">
+                    <p class="text-sm text-gray-500 mb-3">
+                        Already entered your PIN and received an M-PESA confirmation SMS?
+                    </p>
+                    <button
+                        id="manualCheckBtn"
+                        onclick="manualPaymentCheck()"
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                        I Paid — Confirm My Order
+                    </button>
                 </div>
             </div>
         </div>
@@ -1824,7 +1838,7 @@
                 if (data.success) {
                     // Transition from processing to verifying
                     document.getElementById('paymentProcessingModal').classList.add('hidden');
-                    showPaymentVerifyingModal();
+                    showPaymentVerifyingModal(data.checkout_request_id, data.order_number);
                     
                     // Start polling for payment confirmation
                     pollPaymentStatus(data.checkout_request_id, data.order_number);
@@ -1899,13 +1913,13 @@
         }
 
         // Show payment verifying modal
-        function showPaymentVerifyingModal() {
-            document.getElementById('paymentVerifyingModal').classList.remove('hidden');
-        }
+        // function showPaymentVerifyingModal() {
+        //     document.getElementById('paymentVerifyingModal').classList.remove('hidden');
+        // }
 
-        function hidePaymentVerifyingModal() {
-            document.getElementById('paymentVerifyingModal').classList.add('hidden');
-        }
+        // function hidePaymentVerifyingModal() {
+        //     document.getElementById('paymentVerifyingModal').classList.add('hidden');
+        // }
 
 
         // Show payment failed modal
@@ -1971,8 +1985,17 @@
                         const stkData = await stkResponse.json();
                         console.log(`Poll ${attempts} - STK query:`, stkData);
 
+                        const DEFINITIVE_FAILURES = [1, 1032, 1037, 2001, 1025];
+                        // 1032 = cancelled by user
+                        // 1037 = timeout (DS timeout)
+                        // 2001 = wrong PIN
+                        // 1025 = error
+
+                        const resultCode = parseInt(stkDta.result_code);
+
+
                         // Only handle definite failures from STK query
-                        if (stkData.success && stkData.result_code && String(stkData.result_code) !== '0') {
+                        if (stkData.success && resultCode && DEFINITIVE_FAILURES.includes(resultCode)) {
                             clearInterval(pollInterval);
                             document.getElementById('paymentProcessingModal').classList.add('hidden');
                             hidePaymentVerifyingModal();
@@ -1992,6 +2015,79 @@
                     showPaymentFailedModal('Payment confirmation timeout. Please check your orders page.');
                 }
             }, 3000);
+        }
+
+        let manualCheckTimer = null;
+        let currentCheckoutRequestId = null; // store for manual check use
+        let currentOrderNumber = null;
+
+        function showPaymentVerifyingModal(checkoutRequestId, orderNumber) {
+            currentCheckoutRequestId = checkoutRequestId;
+            currentOrderNumber = orderNumber;
+
+            document.getElementById('paymentVerifyingModal').classList.remove('hidden');
+            document.getElementById('manualCheckSection').classList.add('hidden');
+            document.getElementById('verifyingStatusText').textContent = 'Checking payment status...';
+
+            // Show manual check button after 30 seconds
+            manualCheckTimer = setTimeout(() => {
+            document.getElementById('manualCheckSection').classList.remove('hidden');
+            }, 30000);
+        }
+
+        function hidePaymentVerifyingModal() {
+            document.getElementById('paymentVerifyingModal').classList.add('hidden');
+            if (manualCheckTimer) {
+            clearTimeout(manualCheckTimer);
+            manualCheckTimer = null;
+            }
+        }
+
+        //Manual Payment Check
+        async function manualPaymentCheck() {
+            const btn = document.getElementById('manualCheckBtn');
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+            document.getElementById('verifyingStatusText').textContent = 'Querying Safaricom directly...';
+
+            try {
+                const response = await fetch('/api/mpesa/stk-query/', {
+                    method: 'POST',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ checkout_request_id: currentCheckoutRequestId })
+                });
+
+                const data = await response.json();
+                console.log('Manual check result:', data);
+
+                if (data.payment_status === 'completed') {
+                    hidePaymentVerifyingModal();
+                    if (typeof toggleCart === 'function') toggleCart();
+                    showPaymentSuccessModal(currentOrderNumber, '30 minutes');
+                    document.getElementById('checkoutForm').reset();
+                    setTimeout(() => location.reload(), 2000);
+
+                } else if (data.payment_status === 'failed') {
+                    hidePaymentVerifyingModal();
+                    showPaymentFailedModal(data.result_desc || 'Payment was not completed.');
+
+                } else {
+                    // Still pending — re-enable button for another try
+                    document.getElementById('verifyingStatusText').textContent =
+                    'Payment still processing. Try again in a moment.';
+                    btn.disabled = false;
+                    btn.textContent = 'I Paid — Confirm My Order';
+                }
+            } catch (error) {
+                console.error('Manual check error:', error);
+                btn.disabled = false;
+                btn.textContent = 'I Paid — Confirm My Order';
+                document.getElementById('verifyingStatusText').textContent =
+                'Network error. Please try again.';
+            }
         }
 
         // Filter by category
