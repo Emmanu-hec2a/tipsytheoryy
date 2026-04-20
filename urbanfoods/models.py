@@ -257,6 +257,10 @@ class Order(models.Model):
     rating = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
     review = models.TextField(blank=True)
     
+    # Review prompt tracking
+    review_prompted_count = models.IntegerField(default=0, help_text="Number of times review prompt has been shown")
+    review_prompt_dismissed_at = models.DateTimeField(null=True, blank=True, help_text="Last time review prompt was dismissed")
+    
     class Meta:
         ordering = ['-created_at']
     

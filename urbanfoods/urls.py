@@ -35,6 +35,8 @@ urlpatterns = [
     path('orders/', views.my_orders, name='my_orders'),
     path('orders/<str:order_number>/', views.order_detail, name='order_detail'),
     path('api/orders/<str:order_number>/status/', views.order_status_api, name='order_status_api'),
+    path('api/orders/pending-review/', views.pending_review_order, name='pending_review_order'),
+    path('api/orders/<str:order_number>/dismiss-review/', views.dismiss_review_prompt, name='dismiss_review_prompt'),
 
     # User profile
     path('profile/', views.profile, name='profile'),

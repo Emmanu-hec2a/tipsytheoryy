@@ -262,6 +262,36 @@
             text-decoration: none;
         } */
 
+        /* Mobile Search Bar Styling */
+        #mobileSearchInput {
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #mobileSearchInput:focus {
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+        }
+
+        /* Dark mode search bar */
+        [data-bs-theme="dark"] #mobileSearchInput {
+            background-color: #2d2d2d !important;
+            color: #e5e5e5 !important;
+            border-color: #555 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-bs-theme="dark"] #mobileSearchInput::placeholder {
+            color: #9ca3af !important;
+        }
+
+        [data-bs-theme="dark"] #mobileSearchInput:focus {
+            background-color: #2d2d2d !important;
+            color: #e5e5e5 !important;
+            border-color: #ea580c !important;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+        }
+
         /* Mobile food card styling */
         @media (max-width: 767px) {
             /* Target all food cards */
@@ -771,6 +801,107 @@
             75% { border-top-color: #ef4444; }
             100% { border-top-color: #ea580c; }
         }
+
+        /* Review Modal Styles */
+        .review-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: #f9fafb;
+            dark\:background-color: #374151;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        [data-bs-theme="dark"] .review-item {
+            background-color: #374151 !important;
+            border-color: #555 !important;
+        }
+
+        .review-item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .review-item-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .review-item-name {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        [data-bs-theme="dark"] .review-item-name {
+            color: #e5e7eb !important;
+        }
+
+        .review-item-quantity {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.75rem;
+        }
+
+        [data-bs-theme="dark"] .review-item-quantity {
+            color: #9ca3af !important;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .star-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-size: 1.75rem;
+            color: #d1d5db;
+            transition: all 0.2s ease;
+        }
+
+        .star-btn:hover {
+            color: #fbbf24;
+            transform: scale(1.15);
+        }
+
+        .star-btn.active {
+            color: #f59e0b;
+            filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
+        }
+
+        [data-bs-theme="dark"] .star-btn {
+            color: #555;
+        }
+
+        [data-bs-theme="dark"] .star-btn:hover {
+            color: #fbbf24;
+        }
+
+        [data-bs-theme="dark"] .star-btn.active {
+            color: #fbbf24;
+        }
+
+        .rating-value-display {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-left: 0.5rem;
+            min-width: 30px;
+        }
+
+        [data-bs-theme="dark"] .rating-value-display {
+            color: #9ca3af !important;
+        }
+        
     </style>
 </head>
 <body class="gradient-bg" data-store-type="{{ store_type }}">
@@ -982,6 +1113,21 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Mobile Search Bar -->
+        <div class="md:hidden mb-6">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <input 
+                    type="text" 
+                    id="mobileSearchInput"
+                    placeholder="{% if store_type == 'liquor' %}Search drinks…{% elif store_type == 'grocery' %}Search groceries…{% else %}Search meals…{% endif %}"
+                    class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 border-0 transition-all duration-200"
+                >
+            </div>
+        </div>
+
         <!-- Categories -->
         <div class="mb-8">
             <div class="flex gap-4 overflow-x-auto pb-4">
@@ -2157,10 +2303,25 @@
         }
         
         const searchInput = document.getElementById('searchInput');
+        const mobileSearchInput = document.getElementById('mobileSearchInput');
         
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 performSearch(e.target.value.toLowerCase());
+                // Sync mobile search if it exists
+                if (mobileSearchInput) {
+                    mobileSearchInput.value = e.target.value;
+                }
+            });
+        }
+
+        if (mobileSearchInput) {
+            mobileSearchInput.addEventListener('input', (e) => {
+                performSearch(e.target.value.toLowerCase());
+                // Sync desktop search if it exists
+                if (searchInput) {
+                    searchInput.value = e.target.value;
+                }
             });
         }
 
@@ -2989,6 +3150,203 @@
         });
         }
 
+        // ==================== REVIEW MODAL FLOW ====================
+
+        // Store for current review order
+        let currentReviewOrder = null;
+        let reviewRatings = {};
+
+        // Initialize review modal on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isAuthenticated) {
+                checkPendingReview();
+            }
+        });
+
+        // Check for pending review order
+        async function checkPendingReview() {
+            try {
+                const response = await fetch('/api/orders/pending-review/');
+                const data = await response.json();
+                
+                if (data.success && data.order) {
+                    currentReviewOrder = data.order;
+                    populateReviewModal(data.order);
+                    showReviewModal();
+                }
+            } catch (error) {
+                console.error('Error checking pending review:', error);
+            }
+        }
+
+        // Populate review modal with order items
+        function populateReviewModal(order) {
+            const orderNumberEl = document.getElementById('reviewOrderNumber').querySelector('span');
+            orderNumberEl.textContent = order.order_number;
+
+            const itemsContainer = document.getElementById('reviewItemsContainer');
+            itemsContainer.innerHTML = '';
+            reviewRatings = {};
+
+            order.items.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'review-item';
+                itemEl.innerHTML = `
+                    <img src="${item.image_url}" alt="${item.name}" class="review-item-image">
+                    <div class="review-item-content">
+                        <div>
+                            <h3 class="review-item-name">${item.name}</h3>
+                            <p class="review-item-quantity">Qty: ${item.quantity}</p>
+                        </div>
+                        <div class="star-rating">
+                            ${[1, 2, 3, 4, 5].map(star => `
+                                <button 
+                                    type="button"
+                                    class="star-btn" 
+                                    data-item-id="${item.food_item_id}"
+                                    data-rating="${star}"
+                                    onclick="selectRating(${item.food_item_id}, ${star}, this)"
+                                >
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            `).join('')}
+                            <span class="rating-value-display" data-item-id="${item.food_item_id}"></span>
+                        </div>
+                    </div>
+                `;
+                itemsContainer.appendChild(itemEl);
+            });
+        }
+
+        // Handle star rating selection
+        function selectRating(itemId, rating, element) {
+            const button = element;
+            const container = button.closest('.star-rating');
+            const buttons = container.querySelectorAll(`[data-item-id="${itemId}"]`);
+            const ratingDisplay = container.querySelector(`[data-item-id="${itemId}"][class="rating-value-display"]`);
+
+            // Update ratings object
+            reviewRatings[itemId] = rating;
+
+            // Visual feedback
+            buttons.forEach(btn => {
+                const btnRating = parseInt(btn.dataset.rating);
+                if (btnRating <= rating) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Show rating value
+            ratingDisplay.textContent = `${rating}/5`;
+        }
+
+        // Show review modal
+        function showReviewModal() {
+            document.getElementById('reviewModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Dismiss review modal (Maybe Later)
+        async function dismissReviewModal() {
+            if (!currentReviewOrder) return;
+
+            try {
+                const response = await fetch(`/api/orders/${currentReviewOrder.order_number}/dismiss-review/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeReviewModal();
+                }
+            } catch (error) {
+                console.error('Error dismissing review:', error);
+                closeReviewModal();
+            }
+        }
+
+        // Close review modal
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentReviewOrder = null;
+            reviewRatings = {};
+        }
+
+        // Submit review
+        async function submitReviewModal() {
+            if (!currentReviewOrder) return;
+
+            // Check if all items are rated
+            const allRated = currentReviewOrder.items.every(item => reviewRatings[item.food_item_id]);
+            if (!allRated) {
+                alert('Please rate all items before submitting');
+                return;
+            }
+
+            // Prepare review data
+            const reviewData = currentReviewOrder.items.map(item => ({
+                food_item_id: item.food_item_id,
+                rating: reviewRatings[item.food_item_id],
+                comment: ''
+            }));
+
+            try {
+                const response = await fetch(`/orders/${currentReviewOrder.order_number}/submit_review/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(reviewData)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    closeReviewModal();
+                    showReviewSuccessModal();
+                } else {
+                    alert('Error submitting review: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error submitting review:', error);
+                alert('Error submitting review');
+            }
+        }
+
+        // Show success modal
+        function showReviewSuccessModal() {
+            document.getElementById('reviewSuccessModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close success modal
+        function closeReviewSuccessModal() {
+            document.getElementById('reviewSuccessModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         // Open WhatsApp function
         function openWhatsApp() {
             const phoneNumber = '254110345054'; // Replace with your actual WhatsApp business number
@@ -3001,6 +3359,48 @@
     <!-- Floating WhatsApp Button -->
     <div class="floating-whatsapp" onclick="openWhatsApp()">
         <i class="fab fa-whatsapp text-white text-xl"></i>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl fade-in">
+            <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 rounded-t-xl">
+                <h2 class="text-2xl font-bold">⭐ Rate Your Order</h2>
+                <p id="reviewOrderNumber" class="text-sm text-orange-100 mt-1">Order #<span></span></p>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 dark:text-gray-300 mb-6">Help us improve! Rate each item in your order.</p>
+                
+                <div id="reviewItemsContainer" class="space-y-6 mb-8">
+                    <!-- Items will be inserted here by JavaScript -->
+                </div>
+
+                <div class="flex gap-3 sticky bottom-0 bg-white dark:bg-gray-800 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button onclick="dismissReviewModal()" class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-colors">
+                        Maybe Later
+                    </button>
+                    <button onclick="submitReviewModal()" class="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 font-semibold transition-all transform hover:scale-105 shadow-lg">
+                        Submit Review
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Success Modal -->
+    <div id="reviewSuccessModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full shadow-2xl fade-in text-center">
+            <div class="p-8">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-green-500 text-6xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Thank You!</h2>
+                <p class="text-gray-600 dark:text-gray-300 mb-6">Your feedback helps us serve you better.</p>
+                <button onclick="closeReviewSuccessModal()" class="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Floating Cart Button -->

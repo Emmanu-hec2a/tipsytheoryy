@@ -454,6 +454,64 @@ def submit_food_review(request, order_number):
     return JsonResponse({"success": True})
 
 
+# ==================== REVIEW PROMPT ENDPOINTS ====================
+
+@login_required
+@require_http_methods(["GET"])
+def pending_review_order(request):
+    """Get the oldest delivered order without reviews, if under review prompt limit"""
+    order = (
+        Order.objects
+        .filter(
+            user=request.user,
+            status='delivered',
+            has_reviewed_items=False,
+            review_prompted_count__lt=3
+        )
+        .order_by('delivered_at')
+        .first()
+    )
+    
+    if not order:
+        return JsonResponse({'success': False, 'order': None})
+    
+    # Serialize order and items
+    items_data = []
+    for item in order.items.all():
+        items_data.append({
+            'id': item.id,
+            'food_item_id': item.food_item.id,
+            'name': item.food_item.name,
+            'image_url': item.food_item.image.url if item.food_item.image else '',
+            'quantity': item.quantity,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'order': {
+            'order_number': order.order_number,
+            'items': items_data,
+        }
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def dismiss_review_prompt(request, order_number):
+    """Increment review prompt count when user dismisses the modal"""
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    
+    if order.review_prompted_count >= 3:
+        return JsonResponse({'success': False, 'message': 'Maximum prompts reached'}, status=400)
+    
+    order.review_prompted_count += 1
+    order.review_prompt_dismissed_at = timezone.now()
+    order.save(update_fields=['review_prompted_count', 'review_prompt_dismissed_at'])
+    
+    return JsonResponse({'success': True})
+
+
+
 # ==================== ORDER CANCELLATION ====================
 
 @login_required

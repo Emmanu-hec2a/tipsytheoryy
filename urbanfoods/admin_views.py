@@ -114,6 +114,8 @@ def mpesa_payment_details(request):
 
 VALID_STATUSES = ['delivered', 'completed']
 
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
+
 def get_liquor_stats(date, week_start):
     """Return today's and weekly stats for liquor store"""
     today_orders = Order.objects.filter(
@@ -125,7 +127,14 @@ def get_liquor_stats(date, week_start):
         order__created_at__date=date,
         food_item__store_type='liquor',
         order__status__in=['delivered', 'completed']
-    ).aggregate(total=Sum('price_at_order'))['total'] or 0
+    ).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F('price_at_order') * F('quantity'),
+                output_field=DecimalField()
+            )
+        )
+    )['total'] or 0
 
     pending_orders = Order.objects.filter(
         status='pending',
@@ -146,7 +155,14 @@ def get_liquor_stats(date, week_start):
         order__created_at__date__gte=week_start,
         food_item__store_type='liquor',
         order__status__in=['delivered', 'completed']
-    ).aggregate(total=Sum('price_at_order'))['total'] or 0
+    ).aggregate(
+        total=Sum(
+            ExpressionWrapper(
+                F('price_at_order') * F('quantity'),
+                output_field=DecimalField()
+            )
+        )
+    )['total'] or 0
 
     weekly_order_count = weekly_orders.count()
     average_order_value = weekly_revenue / weekly_order_count if weekly_order_count else 0
