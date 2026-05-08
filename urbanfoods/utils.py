@@ -37,7 +37,7 @@ def format_phone(phone):
     return phone
 
 
-def send_telegram_message(message, buttons=None):
+def _send_telegram_message_single(message, buttons=None):
     try:
         bot_token = getattr(settings, 'TELEGRAM_BOTT_TOKEN', None)
         chat_id = getattr(settings, 'TELEGRAM_CHATT_ID', None)
@@ -71,6 +71,54 @@ def send_telegram_message(message, buttons=None):
 
     except Exception as e:
         logger.error(f"❌ Telegram error: {e}")
+        return False
+
+def send_telegram_message(message, buttons=None):
+    try:
+        bot_token = getattr(settings, 'TELEGRAM_BOTT_TOKEN', None)
+        chat_ids = getattr(settings, 'TELEGRAM_CHATT_IDS', None)
+        if not chat_ids:
+            chat_ids = getattr(settings, 'TELEGRAM_CHATT_ID', None)
+
+        if isinstance(chat_ids, str):
+            chat_ids = [chat_id.strip() for chat_id in chat_ids.split(',') if chat_id.strip()]
+
+        if not bot_token or not chat_ids:
+            logger.warning("Telegram credentials not configured")
+            return False
+
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+        base_payload = {
+            'text': message,
+            'parse_mode': 'HTML',
+            'disable_web_page_preview': True
+        }
+
+        if buttons:
+            base_payload['reply_markup'] = json.dumps({
+                "inline_keyboard": buttons
+            })
+
+        sent_count = 0
+        for chat_id in chat_ids:
+            payload = {
+                **base_payload,
+                'chat_id': chat_id,
+            }
+
+            response = requests.post(url, data=payload, timeout=10)
+
+            if response.status_code == 200:
+                sent_count += 1
+                logger.info(f"Telegram message sent to {chat_id}")
+            else:
+                logger.error(f"Telegram failed for {chat_id}: {response.text}")
+
+        return sent_count > 0
+
+    except Exception as e:
+        logger.error(f"Telegram error: {e}")
         return False
 
 

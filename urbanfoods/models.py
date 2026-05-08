@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
@@ -212,12 +213,19 @@ class Order(models.Model):
     room_number = models.CharField(max_length=50)
     phone_number = models.CharField(max_length=15)
     delivery_notes = models.TextField(blank=True)
+    delivery_guy = models.ForeignKey(
+        'DeliveryGuy',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders',
+        help_text="Assign a delivery person to this order"
+    )
     
     # Pricing
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2)
-    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -378,3 +386,62 @@ class MpesaTransaction(models.Model):
 
     def __str__(self):
         return f"{self.mpesa_receipt_number or 'PENDING'} - {self.order.order_number}"
+
+class DeliveryGuy(models.Model):
+    """Delivery personnel for orders"""
+    name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = "Delivery Guys"
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} ({self.phone_number})"
+    
+    @property
+    def total_deliveries(self):
+        """Count total delivered orders"""
+        return self.orders.filter(status='delivered').count()
+    
+    @property
+    def total_revenue(self):
+        """Sum total delivered orders revenue"""
+        return self.orders.filter(status='delivered').aggregate(total=Sum('total'))['total'] or 0
+    
+    @property
+    def delivered_orders(self):
+        """Get all delivered orders"""
+        return self.orders.filter(status='delivered').order_by('-delivered_at')
+
+class SiteSettings(models.Model):
+    """Singleton model for site-wide settings"""
+    delivery_fee = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=20,
+        help_text="Delivery fee in KES"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name_plural = "Site Settings"
+    
+    def __str__(self):
+        return "Site Settings"
+    
+    @classmethod
+    def get_instance(cls):
+        """Get or create singleton instance"""
+        instance, _ = cls.objects.get_or_create(id=1)
+        return instance
+    
+    @classmethod
+    def get_delivery_fee(cls):
+        """Get current delivery fee"""
+        instance = cls.get_instance()
+        return instance.delivery_fee

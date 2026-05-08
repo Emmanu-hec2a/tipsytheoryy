@@ -26,12 +26,19 @@ def offline(request):
     """Offline page for PWA"""
     return render(request, 'offline.html')
 
+def get_delivery_fee_for_store(store_type):
+    """Delivery fee applies only to liquor orders."""
+    if store_type == 'liquor':
+        return SiteSettings.get_delivery_fee()
+    return Decimal('0.00')
+
 from django.db.models import Avg, Count, Q
 
 from django.db.models import Avg, Count, Q
 
 def homepage(request):
     store_type = request.session.get('store_type', 'liquor')
+    delivery_fee = float(get_delivery_fee_for_store(store_type))
 
     categories = FoodCategory.objects.filter(store_type=store_type)
 
@@ -78,6 +85,7 @@ def homepage(request):
         'featured_items': featured_items,
         'popular_items': popular_items,
         'store_type': store_type,
+        'delivery_fee': delivery_fee,
     })
 
 
@@ -287,7 +295,10 @@ def get_cart(request):
     cart, _ = Cart.objects.get_or_create(user=request.user)
 
     items = []
+    store_type = 'liquor'  # default
+    
     for item in cart.items.all():
+        store_type = item.food_item.store_type
         items.append({
             'id': item.id,
             'food_item_id': item.food_item.id,
@@ -298,13 +309,18 @@ def get_cart(request):
             'image': item.food_item.image.url if item.food_item.image else None
         })
 
+    delivery_fee = float(get_delivery_fee_for_store(store_type))
+
+    subtotal = float(cart.total)
+    total = subtotal + delivery_fee
+
     return JsonResponse({
         'success': True,
         'items': items,
         'cart_count': cart.item_count,
-        'subtotal': float(cart.total),
-        'delivery_fee': 0,
-        'total': float(cart.total)
+        'subtotal': subtotal,
+        'delivery_fee': delivery_fee,
+        'total': total
     })
 
 # ==================== ORDER PLACEMENT ====================
@@ -790,7 +806,9 @@ def place_order(request):
     subtotal = cart.total
     first_item = cart.items.select_related('food_item').first()
     store_type = first_item.food_item.store_type if first_item else 'liquor'
-    delivery_fee = 0 if store_type == 'food' else 20
+    
+    delivery_fee = get_delivery_fee_for_store(store_type)
+    
     total = subtotal + delivery_fee
     estimated_delivery = timezone.now() + timezone.timedelta(minutes=30)
 

@@ -5,7 +5,8 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.hashers import check_password
 from django.http import JsonResponse, HttpResponse
 from django.db.models.functions import ExtractHour, TruncDate
-from django.db.models import Count, Sum, Avg, Max, F
+from django.db.models import Count, Sum, Avg, Max, F, Q
+from django.db import models
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from datetime import timedelta
@@ -381,13 +382,16 @@ def get_new_orders(request):
 @staff_member_required(login_url='admin_login')
 def admin_order_detail(request, order_number):
     """View detailed order information"""
-    order = get_object_or_404(Order.objects.select_related('user'), order_number=order_number)
+    order = get_object_or_404(Order.objects.select_related('user', 'delivery_guy'), order_number=order_number)
     status_history = order.status_history.all()
+    active_delivery_guys = DeliveryGuy.objects.filter(is_active=True).order_by('name')
 
     context = {
         'order': order,
         'status_history': status_history,
+        'active_delivery_guys': active_delivery_guys,
     }
+
 
     return render(request, 'custom_admin/order_detail.html', context)
 
@@ -403,11 +407,27 @@ def update_order_status(request):
     order_number = data.get('order_number')
     new_status = data.get('status')
     notes = data.get('notes', '')
+    delivery_guy_id = data.get('delivery_guy_id')
 
     order = get_object_or_404(Order, order_number=order_number)
 
     old_status = order.status
     order.status = new_status
+
+    # Assign or clear delivery guy if provided
+    if delivery_guy_id is not None:
+        if delivery_guy_id:
+            try:
+                delivery_guy = DeliveryGuy.objects.get(id=int(delivery_guy_id), is_active=True)
+                order.delivery_guy = delivery_guy
+            except (DeliveryGuy.DoesNotExist, ValueError):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Selected delivery guy not found or inactive'
+                }, status=400)
+        else:
+            order.delivery_guy = None
+
 
     # ✅ When order is delivered → reduce PRODUCT stock
     if new_status == 'delivered' and old_status != 'delivered':
@@ -456,8 +476,10 @@ def update_order_status(request):
         'success': True,
         'message': f'Order {order_number} status updated to {new_status}',
         'new_status': new_status,
-        'status_display': order.get_status_display()
+        'status_display': order.get_status_display(),
+        'delivery_guy_name': order.delivery_guy.name if order.delivery_guy else None,
     })
+
 
 
 @staff_member_required(login_url='admin_login')
@@ -638,10 +660,12 @@ def liquor_dashboard(request):
 def liquor_orders(request):
     """Liquor order management page"""
     status_filter = request.GET.get('status', 'all')
+    status_choices = Order.STATUS_CHOICES
+    valid_statuses = {value for value, _ in status_choices}
+    if status_filter != 'all' and status_filter not in valid_statuses:
+        status_filter = 'all'
 
-    orders = Order.objects.filter(
-        items__food_item__store_type='liquor'
-    ).distinct().select_related('user').prefetch_related('items')
+    orders = Order.objects.filter(store_type='liquor').select_related('user').prefetch_related('items')
 
     if status_filter != 'all':
         orders = orders.filter(status=status_filter)
@@ -652,6 +676,7 @@ def liquor_orders(request):
     context = {
         'orders': orders[:50],  # Limit to recent 50
         'status_filter': status_filter,
+        'status_choices': status_choices,
         'store_type': 'liquor',
     }
 
@@ -1418,3 +1443,189 @@ def update_admin_password(request):
         })
 
     return JsonResponse({'success': False, 'message': 'Invalid request'})
+
+
+# ==================== DELIVERY GUYS MANAGEMENT ====================
+
+@staff_member_required(login_url='admin_login')
+def delivery_guys_list(request):
+    """List all delivery guys"""
+    # Don't use annotate since total_deliveries and delivered_orders are @property methods
+    delivery_guys = DeliveryGuy.objects.all().order_by('name')
+    
+    context = {
+        'delivery_guys': delivery_guys,
+    }
+    
+    return render(request, 'custom_admin/delivery_guys_list.html', context)
+
+@staff_member_required(login_url='admin_login')
+def delivery_guy_dashboard(request, delivery_guy_id):
+    """Dashboard for a specific delivery guy"""
+    delivery_guy = get_object_or_404(DeliveryGuy, id=delivery_guy_id)
+    
+    # Get all delivered orders for this delivery guy
+    delivered_orders = Order.objects.filter(
+        delivery_guy=delivery_guy,
+        status='delivered'
+    ).order_by('-delivered_at').select_related('user')
+    
+    # Statistics
+    total_deliveries = delivered_orders.count()
+    total_revenue = delivered_orders.aggregate(total=Sum('total'))['total'] or 0
+    
+    # Orders per day (last 7 days)
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    recent_deliveries = delivered_orders.filter(
+        delivered_at__gte=seven_days_ago
+    ).annotate(day=TruncDate('delivered_at')).values('day').annotate(
+        count=Count('id'),
+        revenue=Sum('total')
+    ).order_by('day')
+    
+    context = {
+        'delivery_guy': delivery_guy,
+        'total_deliveries': total_deliveries,
+        'total_revenue': total_revenue,
+        'delivered_orders': delivered_orders,
+        'recent_deliveries': list(recent_deliveries),
+    }
+    
+    return render(request, 'custom_admin/delivery_guy_dashboard.html', context)
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
+def add_delivery_guy(request):
+    """Add a new delivery guy"""
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
+
+    name = data.get('name', '').strip()
+    phone_number = data.get('phone_number', '').strip()
+
+    if not name:
+        return JsonResponse({'success': False, 'message': 'Name is required'}, status=400)
+
+    if not phone_number:
+        return JsonResponse({'success': False, 'message': 'Phone number is required'}, status=400)
+
+    delivery_guy = DeliveryGuy.objects.create(
+        name=name,
+        phone_number=phone_number,
+        is_active=True
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Delivery guy "{name}" added successfully',
+        'delivery_guy_id': delivery_guy.id,
+        'name': delivery_guy.name,
+        'phone_number': delivery_guy.phone_number,
+    })
+
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["PUT"])
+def edit_delivery_guy(request, delivery_guy_id):
+    """Edit delivery guy"""
+    delivery_guy = get_object_or_404(DeliveryGuy, id=delivery_guy_id)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
+
+    name = data.get('name', '').strip()
+    phone_number = data.get('phone_number', '').strip()
+    is_active = data.get('is_active', delivery_guy.is_active)
+
+    if not name:
+        return JsonResponse({'success': False, 'message': 'Name is required'}, status=400)
+
+    if not phone_number:
+        return JsonResponse({'success': False, 'message': 'Phone number is required'}, status=400)
+
+    delivery_guy.name = name
+    delivery_guy.phone_number = phone_number
+    delivery_guy.is_active = is_active
+    delivery_guy.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Delivery guy "{name}" updated successfully',
+        'delivery_guy_id': delivery_guy.id,
+    })
+
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
+def toggle_delivery_guy_status(request, delivery_guy_id):
+    """Toggle delivery guy active status"""
+    delivery_guy = get_object_or_404(DeliveryGuy, id=delivery_guy_id)
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON'}, status=400)
+
+    is_active = data.get('is_active')
+    if is_active is None:
+        is_active = not delivery_guy.is_active
+    
+    delivery_guy.is_active = is_active
+    delivery_guy.save()
+
+    status = 'activated' if is_active else 'deactivated'
+    return JsonResponse({
+        'success': True,
+        'message': f'Delivery guy "{delivery_guy.name}" {status}',
+        'is_active': delivery_guy.is_active,
+    })
+
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["DELETE"])
+def delete_delivery_guy(request, delivery_guy_id):
+    """Delete delivery guy"""
+    delivery_guy = get_object_or_404(DeliveryGuy, id=delivery_guy_id)
+    name = delivery_guy.name
+    delivery_guy.delete()
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Delivery guy "{name}" deleted successfully',
+    })
+
+
+# ==================== SITE SETTINGS ====================
+
+
+@staff_member_required(login_url='admin_login')
+def site_settings_view(request):
+    """Manage site settings"""
+    settings = SiteSettings.get_instance()
+    
+    if request.method == 'POST':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            data = json.loads(request.body)
+            delivery_fee = data.get('delivery_fee')
+            
+            if delivery_fee is not None:
+                settings.delivery_fee = delivery_fee
+                settings.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Delivery fee updated to KES {delivery_fee}',
+                    'delivery_fee': float(settings.delivery_fee)
+                })
+    
+    context = {
+        'settings': settings,
+    }
+    
+    return render(request, 'custom_admin/site_settings.html', context)

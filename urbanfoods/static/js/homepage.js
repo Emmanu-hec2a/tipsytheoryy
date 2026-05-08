@@ -337,11 +337,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Add event listeners for category buttons
 document.addEventListener('DOMContentLoaded', () => {
+    // Desktop category buttons
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const categoryId = btn.dataset.category;
             filterCategory(btn, categoryId);
         });
+    });
+
+    // Mobile category dropdown
+    const categoryDropdownBtn = document.getElementById('categoryDropdownBtn');
+    const categoryDropdownMenu = document.getElementById('categoryDropdownMenu');
+    const categoryDropdownLabel = document.getElementById('categoryDropdownLabel');
+
+    // Toggle dropdown
+    if (categoryDropdownBtn) {
+        categoryDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            categoryDropdownMenu.classList.toggle('hidden');
+        });
+    }
+
+    // Handle category selection in dropdown
+    document.querySelectorAll('.category-dropdown-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const categoryId = item.dataset.category;
+            const categoryName = item.dataset.name;
+
+            // Update label
+            categoryDropdownLabel.textContent = categoryName;
+
+            // Close dropdown
+            categoryDropdownMenu.classList.add('hidden');
+
+            // Filter items
+            const items = document.querySelectorAll('.food-item');
+            items.forEach(foodItem => {
+                if (categoryId === 'all' || foodItem.dataset.category === categoryId) {
+                    foodItem.style.display = 'block';
+                } else {
+                    foodItem.style.display = 'none';
+                }
+            });
+
+            // Also update desktop buttons state
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                if (btn.dataset.category === categoryId || (categoryId === 'all' && btn.dataset.category === 'all')) {
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-200');
+                    btn.classList.add('bg-orange-600', 'text-white');
+                } else {
+                    btn.classList.remove('bg-orange-600', 'text-white');
+                    btn.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-200');
+                }
+            });
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (categoryDropdownBtn && !categoryDropdownBtn.contains(e.target) && !categoryDropdownMenu.contains(e.target)) {
+            categoryDropdownMenu.classList.add('hidden');
+        }
     });
 });
 

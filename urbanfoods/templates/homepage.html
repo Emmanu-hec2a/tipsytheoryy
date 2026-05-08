@@ -1113,23 +1113,49 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Mobile Search Bar -->
+        <!-- Mobile Search Bar with Category Dropdown -->
         <div class="md:hidden mb-6">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
+            <div class="flex gap-2">
+                <!-- Category Dropdown -->
+                <div class="relative flex-shrink-0">
+                    <button id="categoryDropdownBtn" class="flex items-center gap-2 px-4 py-3 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors duration-200 min-w-max border border-purple-800 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <i class="fas fa-filter text-orange-400"></i>
+                        <span id="categoryDropdownLabel">All</span>
+                        <i class="fas fa-chevron-down text-xs ml-1"></i>
+                    </button>
+                    
+                    <!-- Dropdown Menu -->
+                    <div id="categoryDropdownMenu" class="hidden absolute top-full left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                        <div class="p-2">
+                            <button class="category-dropdown-item w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-gray-700 rounded-lg transition-colors" data-category="all" data-name="All">
+                                <i class="fas fa-th me-2"></i>All Categories
+                            </button>
+                            {% for category in categories %}
+                            <button class="category-dropdown-item w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-gray-700 rounded-lg transition-colors" data-category="{{ category.id }}" data-name="{{ category.name }}">
+                                {{ category.icon }} {{ category.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
-                <input 
-                    type="text" 
-                    id="mobileSearchInput"
-                    placeholder="{% if store_type == 'liquor' %}Search drinks…{% elif store_type == 'grocery' %}Search groceries…{% else %}Search meals…{% endif %}"
-                    class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 border-0 transition-all duration-200"
-                >
+
+                <!-- Search Bar -->
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="mobileSearchInput"
+                        placeholder="{% if store_type == 'liquor' %}Search drinks…{% elif store_type == 'grocery' %}Search groceries…{% else %}Search meals…{% endif %}"
+                        class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 border-0 transition-all duration-200"
+                    >
+                </div>
             </div>
         </div>
 
-        <!-- Categories -->
-        <div class="mb-8">
+        <!-- Desktop Categories (Horizontal Scroll) -->
+        <div class="hidden md:block mb-8">
             <div class="flex gap-4 overflow-x-auto pb-4">
                 <button data-category="all" class="category-btn px-6 py-2 bg-orange-600 text-white rounded-full whitespace-nowrap hover:bg-orange-700">
                     All
@@ -1309,7 +1335,7 @@
                 </div>
                 <div class="flex justify-between mb-2">
                     <span>Delivery Fee:</span>
-                    <span id="cartDeliveryFee" class="font-semibold"><b>{% if store_type == 'food' %}FREE{% else %}KES 20{% endif %}</b></span>
+                    <span id="cartDeliveryFee" class="font-semibold"><b>{% if delivery_fee %}KES {{ delivery_fee|floatformat:0 }}{% else %}FREE{% endif %}</b></span>
                 </div>
                 <div class="flex justify-between text-xl font-bold border-t pt-2">
                     <span>Total:</span>
@@ -1626,7 +1652,7 @@
             defaultRoom: '{{ user.default_room|escapejs }}',
             phoneNumber: '{{ user.phone_number|escapejs }}'
         } {% else %} null {% endif %};
-        const deliveryFee = {% if store_type == 'food' %}0{% else %}20{% endif %};
+        const deliveryFee = Number('{{ delivery_fee|floatformat:2 }}');
 
         // Function to generate star rating HTML
         function generateStarRating(rating, reviewCount) {
@@ -1661,7 +1687,7 @@
 
         // State management
         let cartOpen = false;
-        let cartData = { items: [], subtotal: 0, total: 0 };
+        let cartData = { items: [], subtotal: 0, delivery_fee: deliveryFee, total: 0 };
 
         // Toggle cart
         function toggleCart() {
@@ -1729,8 +1755,10 @@
                     </div>
                 `).join('');
                 
+                const currentDeliveryFee = Number(cartData.delivery_fee || 0);
                 document.getElementById('cartSubtotal').textContent = `KES ${cartData.subtotal}`;
-                document.getElementById('cartTotal').textContent = `KES ${cartData.total + deliveryFee}`; // Assuming flat delivery fee of 20
+                document.getElementById('cartDeliveryFee').innerHTML = `<b>${currentDeliveryFee > 0 ? `KES ${currentDeliveryFee}` : 'FREE'}</b>`;
+                document.getElementById('cartTotal').textContent = `KES ${cartData.total}`;
             }
         }
 
@@ -1868,7 +1896,7 @@
             if (cartData.items.length === 0) return;
 
             document.getElementById('checkoutModal').classList.remove('hidden');
-            document.getElementById('checkoutTotal').textContent = `KES ${cartData.total}`; // Assuming flat delivery fee of 20
+            document.getElementById('checkoutTotal').textContent = `KES ${cartData.total}`;
 
             // Pre-fill form with user profile data
             if (isAuthenticated) {
@@ -2422,6 +2450,38 @@
                     filterCategory(btn, categoryId);
                 });
             });
+
+            const categoryDropdownBtn = document.getElementById('categoryDropdownBtn');
+            const categoryDropdownMenu = document.getElementById('categoryDropdownMenu');
+            const categoryDropdownLabel = document.getElementById('categoryDropdownLabel');
+
+            if (categoryDropdownBtn && categoryDropdownMenu && categoryDropdownLabel) {
+                categoryDropdownBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    categoryDropdownMenu.classList.toggle('hidden');
+                });
+
+                document.querySelectorAll('.category-dropdown-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const categoryId = item.dataset.category;
+                        const categoryName = item.dataset.name || 'All';
+                        const matchingBtn = document.querySelector(`.category-btn[data-category="${categoryId}"]`);
+
+                        if (matchingBtn) {
+                            filterCategory(matchingBtn, categoryId);
+                        }
+
+                        categoryDropdownLabel.textContent = categoryName;
+                        categoryDropdownMenu.classList.add('hidden');
+                    });
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (!categoryDropdownMenu.contains(event.target) && !categoryDropdownBtn.contains(event.target)) {
+                        categoryDropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
 
             // Initialize carousel
             initializeCarousel();

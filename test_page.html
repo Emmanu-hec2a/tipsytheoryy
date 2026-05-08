@@ -1,14 +1,14 @@
-{% load static %}
+﻿
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    {% block extrastyle %}{% endblock %}
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Tipsy Theoryy Admin Panel{% endblock %}</title>
+    <title>Admin Login - Tipsy Theoryy</title>
 
-    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
-    <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
+    <link rel="icon" type="image/png" href="/static/images/favicon.png">
+    <link rel="apple-touch-icon" href="/static/images/favicon.png">
 
     <meta name="description" content="TipsyTheoryy Admin System">
     <meta name="author" content="Tipsy Theoryy">
@@ -20,7 +20,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom Admin CSS -->
-    <link rel="stylesheet" href="{% static 'admin.css' %}">
+    <link rel="stylesheet" href="/static/admin.css">
 
     <style>
         .admin-sidebar {
@@ -697,7 +697,7 @@
         }
     </style>
 
-    {% block extra_head %}{% endblock %}
+    
 </head>
 <body>
     <div class="d-flex">
@@ -717,24 +717,24 @@
             <ul class="nav flex-column flex-grow-1">
                 <!-- Liquor Admin Navigation (Default) -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'liquor_dashboard' %}active{% endif %}"
-                       href="{% url 'liquor_dashboard' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/liquor/dashboard/">
                         <i class="fas fa-tachometer-alt me-2"></i>
                         Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_liquor' %}active{% endif %}"
-                       href="{% url 'admin_liquor' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/liquor/">
                         <i class="fas fa-wine-bottle me-2"></i>
                         Liquor Menu
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'liquor_orders' %}active{% endif %}"
-                       href="{% url 'liquor_orders' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/liquor/orders/">
                         <i class="fas fa-clipboard-list me-2"></i>
                         Orders
                         <span id="pendingOrdersBadge" class="badge bg-danger ms-auto notification-badge" style="display: none;">0</span>
@@ -742,24 +742,24 @@
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'liquor_analytics' %}active{% endif %}"
-                       href="{% url 'liquor_analytics' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/liquor/analytics/">
                         <i class="fas fa-chart-bar me-2"></i>
                         Analytics
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'admin_customers' %}active{% endif %}"
-                       href="{% url 'admin_customers' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/customers/">
                         <i class="fas fa-users me-2"></i>
                         Customers
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'delivery_guys_list' %}active{% endif %}"
-                       href="{% url 'delivery_guys_list' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/delivery-guys/">
 
                         <i class="fas fa-truck me-2"></i>
                         Delivery Guys
@@ -767,8 +767,8 @@
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'site_settings' %}active{% endif %}"
-                       href="{% url 'site_settings' %}">
+                    <a class="nav-link "
+                       href="/admin-panel/settings/">
 
                         <i class="fas fa-cog me-2"></i>
                         Settings
@@ -777,28 +777,28 @@
 
                 <!-- Legacy Food/Grocery Links (Hidden by default) -->
                 <li class="nav-item mb-2" style="display: none;">
-                    <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                    <a class="nav-link" href="/admin-panel/">
                         <i class="fas fa-utensils me-2"></i>
                         Food Dashboard
                     </a>
                 </li>
 
                 <li class="nav-item mb-2" style="display: none;">
-                    <a class="nav-link" href="{% url 'admin_menu' %}">
+                    <a class="nav-link" href="/admin-panel/menu/">
                         <i class="fas fa-utensils me-2"></i>
                         Food Menu
                     </a>
                 </li>
 
                 <li class="nav-item mb-2" style="display: none;">
-                    <a class="nav-link" href="{% url 'admin_grocery' %}">
+                    <a class="nav-link" href="/admin-panel/grocery/">
                         <i class="fas fa-shopping-cart me-2"></i>
                         Grocery Store
                     </a>
                 </li>
 
                 <li class="nav-item mb-2">
-                    <a class="nav-link" href="{% url 'homepage' %}" target="_blank">
+                    <a class="nav-link" href="/" target="_blank">
                         <i class="fas fa-external-link-alt me-2"></i>
                         View Site
                     </a>
@@ -808,9 +808,9 @@
             <div class="mt-auto">
                 <div class="text-white-50 small mb-2">
                     <i class="fas fa-user me-1"></i>
-                    {{ request.user.get_full_name|default:request.user.username }}
+                    
                 </div>
-                <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm w-100">
+                <a href="/logout/" class="btn btn-outline-light btn-sm w-100">
                     <i class="fas fa-sign-out-alt me-1"></i>
                     Logout
                 </a>
@@ -829,17 +829,17 @@
                         </button>
 
                         <div>
-                            <h5 class="mb-0">{% block page_title %}Admin Panel{% endblock %}</h5>
-                            {% block breadcrumbs %}
+                            <h5 class="mb-0">Admin Login</h5>
+                            
                             <nav aria-label="breadcrumb">
                                 <ol class="breadcrumb breadcrumb-custom">
                                     <li class="breadcrumb-item">
-                                        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+                                        <a href="/admin-panel/">Dashboard</a>
                                     </li>
-                                    <li class="breadcrumb-item active">{% block breadcrumb_active %}{% endblock %}</li>
+                                    <li class="breadcrumb-item active">Login</li>
                                 </ol>
                             </nav>
-                            {% endblock %}
+                            
                         </div>
                     </div>
 
@@ -886,11 +886,11 @@
                                 </div>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><h6 class="dropdown-header">{{ request.user.get_full_name|default:request.user.username }}</h6></li>
-                                <li><a class="dropdown-item" href="{% url 'admin_profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                                <li><h6 class="dropdown-header"></h6></li>
+                                <li><a class="dropdown-item" href="/admin-panel/profile/"><i class="fas fa-user me-2"></i>Profile</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                                <li><a class="dropdown-item" href="/logout/"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                             </ul>
                         </div>
                     </div>
@@ -899,17 +899,61 @@
 
             <!-- Page Content -->
             <main class="p-4">
-                {% csrf_token %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+                <input type="hidden" name="csrfmiddlewaretoken" value="9muld28IJT2WZM9Mr780u38bsblAODBaQkYVKFEpr1wase2Sfet4IU7Q4G48e1Nm">
+                
 
-                {% block content %}{% endblock %}
+                
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="admin-card">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-shield fa-3x text-primary mb-3"></i>
+                    <h4 class="mb-2">Admin Login</h4>
+                    <p class="text-muted">Please sign in to access the admin panel</p>
+                </div>
+
+                <!-- Alert container -->
+                <div id="alertContainer"></div>
+
+                <form id="adminLoginForm">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="9muld28IJT2WZM9Mr780u38bsblAODBaQkYVKFEpr1wase2Sfet4IU7Q4G48e1Nm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <!-- <div class="mb-3">
+                        <label for="store_type" class="form-label">Admin Panel Type</label>
+                        <select class="form-select" id="store_type" name="store_type" required>
+                            <option value="main">Food Admin</option>
+                            <option value="grocery">Grocery Admin</option>
+                            <option value="liquor">Liquor Admin</option>
+                        </select>
+                    </div> -->
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">Remember me</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="loginBtn">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Only staff members can access this area
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
             </main>
         </div>
     </div>
@@ -1202,6 +1246,66 @@
         }
     </script>
 
-    {% block extra_js %}{% endblock %}
+    
+<script>
+    document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const remember = document.getElementById('remember').checked;
+
+        const button = document.getElementById('loginBtn');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
+        button.disabled = true;
+
+        fetch('/admin-panel/login/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                remember: remember
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 1000);
+            } else {
+                showAlert(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Login error:', error);
+            showAlert('An error occurred during login', 'danger');
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    });
+
+
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        alertContainer.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+</script>
+
 </body>
 </html>
+

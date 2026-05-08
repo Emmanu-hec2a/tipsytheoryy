@@ -1,0 +1,171 @@
+{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Site Settings - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="admin-content">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1"><i class="fas fa-cog text-primary me-2"></i>Site Settings</h1>
+                <p class="text-muted mb-0">Manage global site configuration</p>
+            </div>
+        </div>
+
+        <!-- Delivery Fee Settings Card -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom p-4">
+                        <h5 class="mb-0">
+                            <i class="fas fa-truck text-primary me-2"></i>Delivery Fee Settings
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="settingsForm">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label for="deliveryFee" class="form-label fw-semibold">
+                                    Delivery Fee (KES)
+                                    <span class="badge bg-info ms-2">Liquor Store Only</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">KES</span>
+                                    <input 
+                                        type="number" 
+                                        class="form-control" 
+                                        id="deliveryFee"
+                                        name="delivery_fee"
+                                        value="{{ settings.delivery_fee }}"
+                                        step="0.01"
+                                        min="0"
+                                        required
+                                    >
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    This fee will be added to all liquor store orders during checkout.
+                                </small>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Current Setting:</strong> KES <span id="currentDeliveryFee">{{ settings.delivery_fee }}</span> per delivery
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Success/Error Messages -->
+                <div id="messageContainer" class="mt-3"></div>
+            </div>
+
+            <!-- Info Sidebar -->
+            <!-- <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title fw-semibold mb-3">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>Tips
+                        </h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>This setting applies only to the liquor store</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Food store orders have no delivery fee</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Changes take effect immediately for new orders</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Fee is displayed at checkout</small>
+                            </li>
+                        </ul>
+
+                        <hr>
+
+                        <h6 class="card-title fw-semibold mb-3">
+                            <i class="fas fa-history text-info me-2"></i>Last Updated
+                        </h6>
+                        <p class="small text-muted mb-0">
+                            {{ settings.updated_at|date:"M d, Y H:i" }}
+                        </p>
+                    </div>
+                </div> -->
+            <!-- </div> -->
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const deliveryFee = document.getElementById('deliveryFee').value;
+        const messageContainer = document.getElementById('messageContainer');
+        
+        try {
+            const response = await fetch('{% url "site_settings" %}', {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    delivery_fee: deliveryFee
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('currentDeliveryFee').textContent = data.delivery_fee;
+                messageContainer.innerHTML = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    const alert = messageContainer.querySelector('.alert');
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            } else {
+                messageContainer.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        ${data.message || 'An error occurred'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            messageContainer.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error: ${error.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+    });
+</script>
+{% endblock %}

@@ -43,6 +43,11 @@ urlpatterns = [
     path('orders/<str:order_number>/rate/', views.rate_order, name='rate_order'),
     path('orders/<str:order_number>/submit_review/', views.submit_food_review, name='submit_food_review'),
 
-
+    # Admin - Delivery Guys
+    path('admin/delivery-guys/', admin_views.delivery_guys_list, name='delivery_guys_list'),
+    path('admin/delivery-guys/<int:delivery_guy_id>/', admin_views.delivery_guy_dashboard, name='delivery_guy_dashboard'),
+    
+    # Admin - Site Settings
+    path('admin/settings/', admin_views.site_settings_view, name='site_settings'),
 ]
 

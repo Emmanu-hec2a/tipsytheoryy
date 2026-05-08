@@ -1,0 +1,336 @@
+﻿{% extends 'custom_admin/base.html' %}
+{% load static %}
+
+{% block title %}Delivery Guys - Tipsy Theoryy Admin{% endblock %}
+
+{% block page_title %}Delivery Guys{% endblock %}
+
+{% block breadcrumb_active %}Delivery Guys{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0" style="color: #2d3748;">Delivery Guys</h4>
+        <p class="text-muted mb-0">Manage drivers and delivery personnel assigned to orders.</p>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDeliveryGuyModal">
+        <i class="fas fa-plus me-2"></i>Add Delivery Guy
+    </button>
+</div>
+
+<div class="admin-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Total Deliveries</th>
+                        <th>Total Revenue</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for delivery_guy in delivery_guys %}
+                    <tr data-delivery-guy-id="{{ delivery_guy.id }}">
+                        <td>{{ delivery_guy.name }}</td>
+                        <td>{{ delivery_guy.phone_number }}</td>
+                        <td>
+                            {% if delivery_guy.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ delivery_guy.total_deliveries }}</td>
+                        <td>KES {{ delivery_guy.total_revenue|floatformat:0 }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'delivery_guy_dashboard' delivery_guy.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-secondary btn-edit-delivery-guy" data-delivery-guy-id="{{ delivery_guy.id }}" data-name="{{ delivery_guy.name|escapejs }}" data-phone="{{ delivery_guy.phone_number|escapejs }}" data-active="{{ delivery_guy.is_active|lower }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button class="dropdown-item btn-toggle-status" data-delivery-guy-id="{{ delivery_guy.id }}" data-is-active="{{ delivery_guy.is_active|lower }}">
+                                                {% if delivery_guy.is_active %}
+                                                    <i class="fas fa-ban text-danger me-2"></i>Deactivate
+                                                {% else %}
+                                                    <i class="fas fa-check text-success me-2"></i>Activate
+                                                {% endif %}
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item text-danger btn-delete-delivery-guy" data-delivery-guy-id="{{ delivery_guy.id }}" data-name="{{ delivery_guy.name|escapejs }}">
+                                                <i class="fas fa-trash me-2"></i>Delete
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No delivery guys found</h5>
+                            <p class="text-muted">Add delivery personnel from the admin API or database to manage assignments.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Delivery Guy Modal -->
+<div class="modal fade" id="addDeliveryGuyModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add Delivery Guy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deliveryGuyForm">
+                <div class="modal-body">
+                    <input type="hidden" id="deliveryGuyId">
+                    
+                    <div class="mb-3">
+                        <label for="deliveryGuyName" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="deliveryGuyName" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="deliveryGuyPhone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" id="deliveryGuyPhone" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="deliveryGuyActive" checked>
+                            <label class="form-check-label" for="deliveryGuyActive">
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Delivery Guy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken');
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Handle Add/Edit form submission
+const deliveryGuyForm = document.getElementById('deliveryGuyForm');
+if (deliveryGuyForm) {
+    deliveryGuyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const deliveryGuyId = document.getElementById('deliveryGuyId').value;
+        const name = document.getElementById('deliveryGuyName').value;
+        const phone = document.getElementById('deliveryGuyPhone').value;
+        const isActive = document.getElementById('deliveryGuyActive').checked;
+        
+        const method = deliveryGuyId ? 'PUT' : 'POST';
+        const url = deliveryGuyId 
+            ? `/admin-panel/api/delivery-guys/${deliveryGuyId}/`
+            : '/admin-panel/api/delivery-guys/add/';
+        
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    name: name,
+                    phone_number: phone,
+                    is_active: isActive
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast(data.message || 'Error saving delivery guy', 'error');
+            }
+        } catch (error) {
+            showToast('Error saving delivery guy: ' + error.message, 'error');
+        }
+    });
+}
+
+
+// Edit button handler
+document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.btn-edit-delivery-guy');
+    if (!editBtn) return;
+
+    const deliveryGuyId = editBtn.dataset.deliveryGuyId;
+    const name = editBtn.dataset.name;
+    const phone = editBtn.dataset.phone;
+    const isActive = editBtn.dataset.active === 'true';
+
+    const modalEl = document.getElementById('addDeliveryGuyModal');
+    if (!modalEl) return;
+
+    document.getElementById('deliveryGuyId').value = deliveryGuyId;
+    document.getElementById('deliveryGuyName').value = name;
+    document.getElementById('deliveryGuyPhone').value = phone;
+    document.getElementById('deliveryGuyActive').checked = isActive;
+    document.getElementById('modalTitle').textContent = 'Edit Delivery Guy';
+
+    new bootstrap.Modal(modalEl).show();
+});
+
+// Reset form when modal is hidden
+window.addEventListener('DOMContentLoaded', () => {
+    const modalEl = document.getElementById('addDeliveryGuyModal');
+    if (!modalEl) return;
+
+    modalEl.addEventListener('hidden.bs.modal', () => {
+        const form = document.getElementById('deliveryGuyForm');
+        if (form) form.reset();
+
+        const deliveryGuyIdEl = document.getElementById('deliveryGuyId');
+        const modalTitleEl = document.getElementById('modalTitle');
+        const deliveryGuyActiveEl = document.getElementById('deliveryGuyActive');
+
+        if (deliveryGuyIdEl) deliveryGuyIdEl.value = '';
+        if (modalTitleEl) modalTitleEl.textContent = 'Add Delivery Guy';
+        if (deliveryGuyActiveEl) deliveryGuyActiveEl.checked = true;
+    });
+});
+
+
+
+// Toggle status handler
+document.addEventListener('click', async (e) => {
+    if (e.target.closest('.btn-toggle-status')) {
+        const btn = e.target.closest('.btn-toggle-status');
+        const deliveryGuyId = btn.dataset.deliveryGuyId;
+        const isActive = btn.dataset.isActive === 'true';
+        
+        if (!confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this delivery guy?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin-panel/api/delivery-guys/${deliveryGuyId}/toggle-status/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    is_active: !isActive
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast(data.message || 'Error updating status', 'error');
+            }
+        } catch (error) {
+            showToast('Error updating status: ' + error.message, 'error');
+        }
+    }
+});
+
+// Delete handler
+document.addEventListener('click', async (e) => {
+    if (e.target.closest('.btn-delete-delivery-guy')) {
+        const btn = e.target.closest('.btn-delete-delivery-guy');
+        const deliveryGuyId = btn.dataset.deliveryGuyId;
+        const name = btn.dataset.name;
+        
+        if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin-panel/api/delivery-guys/${deliveryGuyId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast(data.message || 'Error deleting delivery guy', 'error');
+            }
+        } catch (error) {
+            showToast('Error deleting delivery guy: ' + error.message, 'error');
+        }
+    }
+});
+
+// Toast notification
+function showToast(message, type = 'info') {
+    let toast = document.getElementById('adminToast');
+    
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'adminToast';
+        toast.className = `alert alert-${type} position-fixed bottom-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        document.body.appendChild(toast);
+    }
+    
+    toast.textContent = message;
+    toast.className = `alert alert-${type} position-fixed bottom-0 end-0 m-3`;
+    toast.style.display = 'block';
+    
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -190,6 +190,7 @@ IS_RAILWAY = os.environ.get("RAILWAY_ENVIRONMENT") is not None
 # Telegram Bot config
 TELEGRAM_BOTT_TOKEN=os.environ.get('TELEGRAM_BOTT_TOKEN')
 TELEGRAM_CHATT_ID=os.environ.get('TELEGRAM_CHATT_ID')
+TELEGRAM_CHATT_IDS=os.environ.get('TELEGRAM_CHATT_IDS')
 
 
 # REST Framework Configuration

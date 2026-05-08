@@ -127,7 +127,20 @@ urlpatterns = [
     path('admin-panel/profile/', admin_views.admin_profile, name='admin_profile'),
     path('admin-panel/api/admin/update-password/', admin_views.update_admin_password, name='admin_api_update_password'),
     
+    # Delivery Guys
+    path('admin-panel/delivery-guys/', admin_views.delivery_guys_list, name='delivery_guys_list'),
+    path('admin-panel/delivery-guys/<int:delivery_guy_id>/', admin_views.delivery_guy_dashboard, name='delivery_guy_dashboard'),
+    path('admin-panel/api/delivery-guys/add/', admin_views.add_delivery_guy, name='add_delivery_guy'),
+    path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/', admin_views.edit_delivery_guy, name='edit_delivery_guy'),
+    path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/toggle-status/', admin_views.toggle_delivery_guy_status, name='toggle_delivery_guy_status'),
+    path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/delete/', admin_views.delete_delivery_guy, name='delete_delivery_guy'),
+    
+    # Site Settings
+
+    path('admin-panel/settings/', admin_views.site_settings_view, name='site_settings'),
+    
     # Reviews management
+
     path('orders/<str:order_number>/submit_review/', views.submit_food_review, name='submit_food_review'),
     path('orders/<str:order_number>/rate/', views.rate_order, name='rate_order'),
 

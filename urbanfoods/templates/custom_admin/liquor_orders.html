@@ -233,21 +233,23 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="mb-0" style="color: #2d3748;">🍷 Liquor Order Management</h4>
-    <div class="d-flex gap-2">
-        <select class="form-select" id="statusFilter" onchange="filterOrders()">
+    <form class="d-flex gap-2" method="get" action="{% url 'liquor_orders' %}">
+        <select class="form-select" id="statusFilter" name="status">
             <option value="all"             {% if status_filter == 'all' %}selected{% endif %}>All Orders</option>
-            <option value="pending"         {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
-            <option value="confirmed"       {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
-            <option value="preparing"       {% if status_filter == 'preparing' %}selected{% endif %}>Preparing</option>
-            <option value="ready"           {% if status_filter == 'ready' %}selected{% endif %}>Ready</option>
-            <option value="out_for_delivery"{% if status_filter == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
-            <option value="delivered"       {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
-            <option value="cancelled"       {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
         </select>
-        <button class="btn btn-outline-primary" onclick="refreshOrders()">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-filter me-1"></i>Filter
+        </button>
+        <a class="btn btn-outline-secondary" href="{% url 'liquor_orders' %}">
+            <i class="fas fa-times me-1"></i>Clear
+        </a>
+        <button type="button" class="btn btn-outline-primary" onclick="refreshOrders()">
             <i class="fas fa-sync-alt me-1"></i>Refresh
         </button>
-    </div>
+    </form>
 </div>
 
 <!-- ── Orders Table ── -->
@@ -261,17 +263,18 @@
                         <th>Customer</th>
                         <th>Items</th>
                         <th>Total</th>
-                        <th>Payment</th>  <!-- ← NEW COLUMN -->
+                        <th>Payment</th>
                         <th>Status</th>
                         <th>Time</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="ordersTableBody">
                     {% for order in orders %}
                     <tr data-order-id="{{ order.id }}">
                         <td>
-                            <strong class="text-primary">{{ order.order_number }}</strong>
+                            <a href="{% url 'admin_order_detail' order.order_number %}" class="text-decoration-none">
+                                <strong class="text-primary">{{ order.order_number }}</strong>
+                            </a>
                         </td>
                         <td>
                             <div>
@@ -339,74 +342,10 @@
                             <br><small class="text-muted">Est: {{ order.estimated_delivery|date:"H:i" }}</small>
                             {% endif %}
                         </td>
-
-                        <!-- ── Actions ── -->
-                        <td>
-                            <div class="btn-group" role="group">
-                                <a href="{% url 'admin_order_detail' order.order_number %}" class="btn btn-sm btn-outline-primary" title="View order">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-
-                                <!-- M-Pesa button (shown when payment exists OR order is not COD) -->
-                                {% if order.payment_method == 'mpesa' %}
-                                <button class="btn btn-sm btn-outline-success btn-mpesa-details"
-                                        data-order-number="{{ order.order_number }}"
-                                        title="View M-Pesa Payment Details">
-                                    <i class="fas fa-mobile-alt"></i>
-                                </button>
-                                {% else %}
-                                <button class="btn btn-sm btn-outline-secondary"
-                                        disabled
-                                        title="This order was placed using Cash on Delivery">
-                                    <i class="fas fa-mobile-alt"></i>
-                                </button>
-                                {% endif %}
-
-
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        <i class="fas fa-cog"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        {% if order.status == 'pending' %}
-                                        <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('{{ order.order_number }}', 'confirmed')">
-                                            <i class="fas fa-check text-success me-2"></i>Confirm Order
-                                        </a></li>
-                                        {% endif %}
-                                        {% if order.status == 'confirmed' %}
-                                        <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('{{ order.order_number }}', 'preparing')">
-                                            <i class="fas fa-utensils text-warning me-2"></i>Start Preparing
-                                        </a></li>
-                                        {% endif %}
-                                        {% if order.status == 'preparing' %}
-                                        <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('{{ order.order_number }}', 'ready')">
-                                            <i class="fas fa-check-circle text-info me-2"></i>Mark Ready
-                                        </a></li>
-                                        {% endif %}
-                                        {% if order.status == 'ready' %}
-                                        <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('{{ order.order_number }}', 'out_for_delivery')">
-                                            <i class="fas fa-truck text-primary me-2"></i>Out for Delivery
-                                        </a></li>
-                                        {% endif %}
-                                        {% if order.status == 'out_for_delivery' %}
-                                        <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('{{ order.order_number }}', 'delivered')">
-                                            <i class="fas fa-box-open text-success me-2"></i>Mark Delivered
-                                        </a></li>
-                                        {% endif %}
-                                        {% if order.status not in 'delivered,cancelled' %}
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#" onclick="cancelOrder('{{ order.order_number }}')">
-                                            <i class="fas fa-times me-2"></i>Cancel Order
-                                        </a></li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-5">
+                        <td colspan="7" class="text-center py-5">
                             <i class="fas fa-wine-bottle fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No liquor orders found</h5>
                             <p class="text-muted">Liquor orders will appear here once customers start placing them.</p>
@@ -602,7 +541,13 @@
     ───────────────────────────────────────────── */
     function filterOrders() {
         const status = document.getElementById('statusFilter').value;
-        window.location.href = `?status=${status}`;
+        const url = new URL(window.location.href);
+        if (status === 'all') {
+            url.searchParams.delete('status');
+        } else {
+            url.searchParams.set('status', status);
+        }
+        window.location.href = url.toString();
     }
     function refreshOrders() { window.location.reload(); }
 
