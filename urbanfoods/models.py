@@ -416,6 +416,66 @@ class DeliveryGuy(models.Model):
     def delivered_orders(self):
         """Get all delivered orders"""
         return self.orders.filter(status='delivered').order_by('-delivered_at')
+    
+    def get_current_week_start(self):
+        """Get the start date (Monday) of the current week"""
+        from datetime import datetime, timedelta
+        today = timezone.now().date()
+        # Monday is 0, Sunday is 6
+        days_since_monday = today.weekday()
+        week_start = today - timedelta(days=days_since_monday)
+        return week_start
+    
+    def get_current_week_end(self):
+        """Get the end date (Sunday) of the current week"""
+        from datetime import datetime, timedelta
+        week_start = self.get_current_week_start()
+        week_end = week_start + timedelta(days=6)
+        return week_end
+    
+    def get_this_week_deliveries(self):
+        """Get number of deliveries for current week"""
+        from datetime import datetime, timedelta
+        week_start = self.get_current_week_start()
+        week_end = self.get_current_week_end()
+        week_start_datetime = timezone.make_aware(timezone.datetime.combine(week_start, timezone.datetime.min.time()))
+        week_end_datetime = timezone.make_aware(timezone.datetime.combine(week_end, timezone.datetime.max.time()))
+        
+        return self.orders.filter(
+            status='delivered',
+            delivered_at__gte=week_start_datetime,
+            delivered_at__lte=week_end_datetime
+        ).count()
+    
+    def get_this_week_revenue(self):
+        """Get revenue for current week"""
+        from datetime import datetime, timedelta
+        week_start = self.get_current_week_start()
+        week_end = self.get_current_week_end()
+        week_start_datetime = timezone.make_aware(timezone.datetime.combine(week_start, timezone.datetime.min.time()))
+        week_end_datetime = timezone.make_aware(timezone.datetime.combine(week_end, timezone.datetime.max.time()))
+        
+        return self.orders.filter(
+            status='delivered',
+            delivered_at__gte=week_start_datetime,
+            delivered_at__lte=week_end_datetime
+        ).aggregate(total=Sum('total'))['total'] or 0
+    
+    def get_or_create_current_week_payment(self):
+        """Get or create the weekly payment record for current week"""
+        week_start = self.get_current_week_start()
+        week_end = self.get_current_week_end()
+        
+        weekly_payment, created = DeliveryGuyWeeklyPayment.objects.get_or_create(
+            delivery_guy=self,
+            week_start=week_start,
+            week_end=week_end,
+            defaults={
+                'deliveries_count': self.get_this_week_deliveries(),
+                'total_revenue': self.get_this_week_revenue(),
+            }
+        )
+        return weekly_payment
 
 class SiteSettings(models.Model):
     """Singleton model for site-wide settings"""
@@ -445,3 +505,25 @@ class SiteSettings(models.Model):
         """Get current delivery fee"""
         instance = cls.get_instance()
         return instance.delivery_fee
+
+class DeliveryGuyWeeklyPayment(models.Model):
+    """Track weekly payments and delivery counts for delivery guys"""
+    delivery_guy = models.ForeignKey(DeliveryGuy, on_delete=models.CASCADE, related_name='weekly_payments')
+    week_start = models.DateField(help_text="Start date of the week")
+    week_end = models.DateField(help_text="End date of the week")
+    deliveries_count = models.IntegerField(default=0, help_text="Number of deliveries for the week")
+    total_revenue = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Total revenue for the week")
+    is_paid = models.BooleanField(default=False, help_text="Whether the payment has been marked as completed")
+    paid_at = models.DateTimeField(null=True, blank=True, help_text="When the payment was marked as completed")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Delivery Guy Weekly Payment"
+        verbose_name_plural = "Delivery Guy Weekly Payments"
+        unique_together = ('delivery_guy', 'week_start', 'week_end')
+        ordering = ['-week_start']
+    
+    def __str__(self):
+        return f"{self.delivery_guy.name} - Week of {self.week_start} ({self.deliveries_count} deliveries)"
+

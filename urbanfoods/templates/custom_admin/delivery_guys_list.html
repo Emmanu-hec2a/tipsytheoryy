@@ -29,29 +29,39 @@
                         <th>Status</th>
                         <th>Total Deliveries</th>
                         <th>Total Revenue</th>
+                        <th>This Week</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for delivery_guy in delivery_guys %}
-                    <tr data-delivery-guy-id="{{ delivery_guy.id }}">
-                        <td>{{ delivery_guy.name }}</td>
-                        <td>{{ delivery_guy.phone_number }}</td>
+                    {% for item in delivery_guys %}
+                    <tr data-delivery-guy-id="{{ item.guy.id }}">
+                        <td>{{ item.guy.name }}</td>
+                        <td>{{ item.guy.phone_number }}</td>
                         <td>
-                            {% if delivery_guy.is_active %}
+                            {% if item.guy.is_active %}
                             <span class="badge bg-success">Active</span>
                             {% else %}
                             <span class="badge bg-danger">Inactive</span>
                             {% endif %}
                         </td>
-                        <td>{{ delivery_guy.total_deliveries }}</td>
-                        <td>KES {{ delivery_guy.total_revenue|floatformat:0 }}</td>
+                        <td>{{ item.guy.total_deliveries }}</td>
+                        <td>KES {{ item.guy.total_revenue|floatformat:0 }}</td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <small class="text-muted">{{ item.this_week_deliveries }} deliveries</small>
+                                <small class="text-muted">KES {{ item.this_week_revenue|floatformat:0 }}</small>
+                                {% if item.is_paid_this_week %}
+                                <span class="badge bg-success mt-1" style="width: fit-content;">Paid</span>
+                                {% endif %}
+                            </div>
+                        </td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm" role="group">
-                                <a href="{% url 'delivery_guy_dashboard' delivery_guy.id %}" class="btn btn-outline-primary">
+                                <a href="{% url 'delivery_guy_dashboard' item.guy.id %}" class="btn btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <button class="btn btn-outline-secondary btn-edit-delivery-guy" data-delivery-guy-id="{{ delivery_guy.id }}" data-name="{{ delivery_guy.name|escapejs }}" data-phone="{{ delivery_guy.phone_number|escapejs }}" data-active="{{ delivery_guy.is_active|lower }}">
+                                <button class="btn btn-outline-secondary btn-edit-delivery-guy" data-delivery-guy-id="{{ item.guy.id }}" data-name="{{ item.guy.name|escapejs }}" data-phone="{{ item.guy.phone_number|escapejs }}" data-active="{{ item.guy.is_active|lower }}">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <div class="dropdown">
@@ -59,9 +69,17 @@
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
+                                        {% if not item.is_paid_this_week %}
                                         <li>
-                                            <button class="dropdown-item btn-toggle-status" data-delivery-guy-id="{{ delivery_guy.id }}" data-is-active="{{ delivery_guy.is_active|lower }}">
-                                                {% if delivery_guy.is_active %}
+                                            <button class="dropdown-item btn-mark-paid" data-delivery-guy-id="{{ item.guy.id }}" data-delivery-guy-name="{{ item.guy.name|escapejs }}">
+                                                <i class="fas fa-check-circle text-success me-2"></i>Mark Paid (This Week)
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% endif %}
+                                        <li>
+                                            <button class="dropdown-item btn-toggle-status" data-delivery-guy-id="{{ item.guy.id }}" data-is-active="{{ item.guy.is_active|lower }}">
+                                                {% if item.guy.is_active %}
                                                     <i class="fas fa-ban text-danger me-2"></i>Deactivate
                                                 {% else %}
                                                     <i class="fas fa-check text-success me-2"></i>Activate
@@ -69,7 +87,7 @@
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="dropdown-item text-danger btn-delete-delivery-guy" data-delivery-guy-id="{{ delivery_guy.id }}" data-name="{{ delivery_guy.name|escapejs }}">
+                                            <button class="dropdown-item text-danger btn-delete-delivery-guy" data-delivery-guy-id="{{ item.guy.id }}" data-name="{{ item.guy.name|escapejs }}">
                                                 <i class="fas fa-trash me-2"></i>Delete
                                             </button>
                                         </li>
@@ -80,7 +98,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="7" class="text-center py-5">
                             <i class="fas fa-truck fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No delivery guys found</h5>
                             <p class="text-muted">Add delivery personnel from the admin API or database to manage assignments.</p>
@@ -274,6 +292,40 @@ document.addEventListener('click', async (e) => {
             }
         } catch (error) {
             showToast('Error updating status: ' + error.message, 'error');
+        }
+    }
+});
+
+// Mark as paid handler
+document.addEventListener('click', async (e) => {
+    if (e.target.closest('.btn-mark-paid')) {
+        const btn = e.target.closest('.btn-mark-paid');
+        const deliveryGuyId = btn.dataset.deliveryGuyId;
+        const deliveryGuyName = btn.dataset.deliveryGuyName;
+        
+        if (!confirm(`Mark ${deliveryGuyName} as paid for this week? This will reset their weekly delivery count to 0.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/admin-panel/api/delivery-guys/${deliveryGuyId}/mark-paid-weekly/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast(data.message || 'Error marking as paid', 'error');
+            }
+        } catch (error) {
+            showToast('Error marking as paid: ' + error.message, 'error');
         }
     }
 });

@@ -9,7 +9,7 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'd*+?8s,fldT(@.6~TtSULTd\thq~qM\*{1f{kZ&Z2Ga&/P_=~')
 
 # settings.py
 SESSION_ENGINE = "django.contrib.sessions.backends.db"  # default

@@ -109,12 +109,26 @@
 <div class="container-fluid py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800" style="color: #2d3748 !important;">Analytics & Reports</h1>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <!-- Preset filters -->
       <select class="form-select form-select-sm" id="timeRange" onchange="changeTimeRange()" style="width: auto;">
         <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
         <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
         <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+        <option value="custom" {% if days == 'custom' %}selected{% endif %}>Custom Range</option>
       </select>
+      
+      <!-- Custom date range (hidden by default) -->
+      <div id="customDateRange" class="d-flex gap-2" style="{% if days != 'custom' %}display: none;{% endif %}">
+        <input type="date" id="fromDate" class="form-control form-control-sm" placeholder="From" 
+               value="{{ from_date }}" style="width: auto;">
+        <input type="date" id="toDate" class="form-control form-control-sm" placeholder="To" 
+               value="{{ to_date }}" style="width: auto;">
+        <button class="btn btn-primary btn-sm" onclick="applyCustomDateRange()">
+          <i class="fas fa-check me-1"></i>Apply
+        </button>
+      </div>
+      
       <button class="btn btn-primary btn-sm" onclick="exportReport()">
         <i class="fas fa-download me-1"></i>Export
       </button>
@@ -673,8 +687,34 @@ function initializeCharts() {
 }
 
 function changeTimeRange() {
-    const days = document.getElementById('timeRange').value;
-    window.location.href = `?days=${days}`;
+    const timeRange = document.getElementById('timeRange').value;
+    
+    if (timeRange === 'custom') {
+        // Show custom date range inputs
+        document.getElementById('customDateRange').style.display = 'flex';
+    } else {
+        // Hide custom date range inputs and load preset
+        document.getElementById('customDateRange').style.display = 'none';
+        window.location.href = `?days=${timeRange}`;
+    }
+}
+
+function applyCustomDateRange() {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    
+    if (!fromDate || !toDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(fromDate) > new Date(toDate)) {
+        alert('Start date cannot be after end date');
+        return;
+    }
+    
+    // Load with custom dates
+    window.location.href = `?from_date=${fromDate}&to_date=${toDate}`;
 }
 
 function exportReport() {

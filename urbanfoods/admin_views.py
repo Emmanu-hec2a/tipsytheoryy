@@ -9,7 +9,7 @@ from django.db.models import Count, Sum, Avg, Max, F, Q
 from django.db import models
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from .utils import send_push_to_all, notify_low_stock
 from .models import *
 import json
@@ -1096,13 +1096,33 @@ def delete_food_item(request):
 @staff_member_required(login_url='admin_login')
 def admin_analytics(request):
     """Analytics and reports"""
-    # Date range
-    days = int(request.GET.get('days', 7))
-    start_date = timezone.now() - timedelta(days=days)
+    # Date range - support both preset and custom dates
+    days = request.GET.get('days', '7')
+    from_date_str = request.GET.get('from_date')
+    to_date_str = request.GET.get('to_date')
+    
+    # Handle custom date range
+    if from_date_str and to_date_str:
+        try:
+            start_date = timezone.datetime.strptime(from_date_str, '%Y-%m-%d').date()
+            end_date = timezone.datetime.strptime(to_date_str, '%Y-%m-%d').date()
+            start_date = timezone.make_aware(timezone.datetime.combine(start_date, timezone.datetime.min.time()))
+            end_date = timezone.make_aware(timezone.datetime.combine(end_date, timezone.datetime.max.time()))
+            days = 'custom'
+        except (ValueError, TypeError):
+            # Fall back to preset days
+            days = int(days)
+            start_date = timezone.now() - timedelta(days=days)
+            end_date = timezone.now()
+    else:
+        days = int(days)
+        start_date = timezone.now() - timedelta(days=days)
+        end_date = timezone.now()
 
     # Revenue over time
     daily_revenue = Order.objects.filter(
         created_at__gte=start_date,
+        created_at__lte=end_date,
         status='delivered'
     ).extra(
         select={'day': 'DATE(created_at)'}
@@ -1114,6 +1134,7 @@ def admin_analytics(request):
     # Top selling items (food and grocery only)
     top_items = OrderItem.objects.filter(
         order__created_at__gte=start_date,
+        order__created_at__lte=end_date,
         food_item__store_type__in=['food', 'grocery']
     ).values(
         'food_item__name',
@@ -1126,6 +1147,7 @@ def admin_analytics(request):
     # Top customers
     top_customers = Order.objects.filter(
         created_at__gte=start_date,
+        created_at__lte=end_date,
         status='delivered'
     ).values(
         'user__username',
@@ -1137,7 +1159,8 @@ def admin_analytics(request):
 
     # Order status distribution
     status_distribution = Order.objects.filter(
-        created_at__gte=start_date
+        created_at__gte=start_date,
+        created_at__lte=end_date
     ).values('status').annotate(
         count=Count('id')
     )
@@ -1148,11 +1171,12 @@ def admin_analytics(request):
     avg_order_value = total_revenue / total_orders if total_orders > 0 else 0
 
     # Peak hours
-    peak_hours = (Order.objects.filter(created_at__gte=start_date).annotate(hour=ExtractHour('created_at')).values('hour').annotate(order_count=Count('id')).order_by('-order_count')[:10])
+    peak_hours = (Order.objects.filter(created_at__gte=start_date, created_at__lte=end_date).annotate(hour=ExtractHour('created_at')).values('hour').annotate(order_count=Count('id')).order_by('-order_count')[:10])
 
     # M-PESA Payment Analytics
     mpesa_orders = Order.objects.filter(
         created_at__gte=start_date,
+        created_at__lte=end_date,
         payment_method='mpesa'
     )
 
@@ -1180,22 +1204,26 @@ def admin_analytics(request):
     # Liquor-specific metrics
     liquor_orders = Order.objects.filter(
         created_at__gte=start_date,
+        created_at__lte=end_date,
         items__food_item__store_type='liquor'
     ).distinct()
 
     liquor_revenue = OrderItem.objects.filter(
         order__created_at__gte=start_date,
+        order__created_at__lte=end_date,
         food_item__store_type='liquor'
     ).aggregate(total=Sum('price_at_order'))['total'] or 0
 
     liquor_items_sold = OrderItem.objects.filter(
         order__created_at__gte=start_date,
+        order__created_at__lte=end_date,
         food_item__store_type='liquor'
     ).aggregate(total=Sum('quantity'))['total'] or 0
 
     # Top selling liquor items
     top_liquor_items = OrderItem.objects.filter(
         order__created_at__gte=start_date,
+        order__created_at__lte=end_date,
         food_item__store_type='liquor'
     ).values(
         'food_item__name',
@@ -1210,6 +1238,7 @@ def admin_analytics(request):
     liquor_daily_revenue = (
     OrderItem.objects.filter(
         order__created_at__gte=start_date,
+        order__created_at__lte=end_date,
         food_item__store_type='liquor'
     )
     .annotate(day=TruncDate('order__created_at'))
@@ -1221,12 +1250,18 @@ def admin_analytics(request):
     .order_by('day')
     )
 
+    # Format dates for display
+    from_date_display = start_date.strftime('%Y-%m-%d') if isinstance(start_date, datetime) else start_date
+    to_date_display = end_date.strftime('%Y-%m-%d') if isinstance(end_date, datetime) else end_date
+
     context = {
         'daily_revenue': json.dumps(list(daily_revenue), default=str),
         'top_items': json.dumps(list(top_items), default=str),
         'top_customers': json.dumps(list(top_customers), default=str),
         'status_distribution': json.dumps(list(status_distribution), default=str),
         'days': days,
+        'from_date': from_date_display,
+        'to_date': to_date_display,
         'total_revenue': total_revenue,
         'total_orders': total_orders,
         'avg_order_value': avg_order_value,
@@ -1453,8 +1488,33 @@ def delivery_guys_list(request):
     # Don't use annotate since total_deliveries and delivered_orders are @property methods
     delivery_guys = DeliveryGuy.objects.all().order_by('name')
     
+    # Prepare delivery guy data with this week's deliveries
+    delivery_guys_data = []
+    for guy in delivery_guys:
+        this_week_deliveries = guy.get_this_week_deliveries()
+        this_week_revenue = guy.get_this_week_revenue()
+        week_start = guy.get_current_week_start()
+        week_end = guy.get_current_week_end()
+        
+        # Check if already paid this week
+        is_paid = DeliveryGuyWeeklyPayment.objects.filter(
+            delivery_guy=guy,
+            week_start=week_start,
+            week_end=week_end,
+            is_paid=True
+        ).exists()
+        
+        delivery_guys_data.append({
+            'guy': guy,
+            'this_week_deliveries': this_week_deliveries,
+            'this_week_revenue': this_week_revenue,
+            'week_start': week_start,
+            'week_end': week_end,
+            'is_paid_this_week': is_paid,
+        })
+    
     context = {
-        'delivery_guys': delivery_guys,
+        'delivery_guys': delivery_guys_data,
     }
     
     return render(request, 'custom_admin/delivery_guys_list.html', context)
@@ -1599,6 +1659,74 @@ def delete_delivery_guy(request, delivery_guy_id):
         'success': True,
         'message': f'Delivery guy "{name}" deleted successfully',
     })
+
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["POST"])
+def mark_delivery_guy_paid_weekly(request, delivery_guy_id):
+    """Mark delivery guy as paid for the current week and reset delivery count"""
+    try:
+        delivery_guy = get_object_or_404(DeliveryGuy, id=delivery_guy_id)
+        
+        # Get or create current week's payment record
+        weekly_payment = delivery_guy.get_or_create_current_week_payment()
+        
+        # Mark as paid and set paid_at timestamp
+        weekly_payment.is_paid = True
+        weekly_payment.paid_at = timezone.now()
+        weekly_payment.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Marked {delivery_guy.name} as paid for week of {weekly_payment.week_start} to {weekly_payment.week_end}',
+            'delivery_guy_id': delivery_guy_id,
+            'deliveries_this_week': 0,  # Reset to 0 after marking paid
+            'week_start': str(weekly_payment.week_start),
+            'week_end': str(weekly_payment.week_end),
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error marking as paid: {str(e)}'
+        }, status=400)
+
+
+@staff_member_required(login_url='admin_login')
+@require_http_methods(["GET"])
+def get_delivery_guy_week_deliveries(request, delivery_guy_id):
+    """Get current week's delivery count for a delivery guy"""
+    try:
+        delivery_guy = get_object_or_404(DeliveryGuy, id=delivery_guy_id)
+        
+        week_deliveries = delivery_guy.get_this_week_deliveries()
+        week_revenue = delivery_guy.get_this_week_revenue()
+        week_start = delivery_guy.get_current_week_start()
+        week_end = delivery_guy.get_current_week_end()
+        
+        # Check if already paid this week
+        weekly_payment = DeliveryGuyWeeklyPayment.objects.filter(
+            delivery_guy=delivery_guy,
+            week_start=week_start,
+            week_end=week_end,
+            is_paid=True
+        ).first()
+        
+        is_paid = weekly_payment is not None
+        
+        return JsonResponse({
+            'success': True,
+            'delivery_guy_id': delivery_guy_id,
+            'week_deliveries': week_deliveries,
+            'week_revenue': float(week_revenue),
+            'week_start': str(week_start),
+            'week_end': str(week_end),
+            'is_paid': is_paid,
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error fetching deliveries: {str(e)}'
+        }, status=400)
 
 
 # ==================== SITE SETTINGS ====================

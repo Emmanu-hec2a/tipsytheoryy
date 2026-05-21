@@ -134,6 +134,8 @@ urlpatterns = [
     path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/', admin_views.edit_delivery_guy, name='edit_delivery_guy'),
     path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/toggle-status/', admin_views.toggle_delivery_guy_status, name='toggle_delivery_guy_status'),
     path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/delete/', admin_views.delete_delivery_guy, name='delete_delivery_guy'),
+    path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/mark-paid-weekly/', admin_views.mark_delivery_guy_paid_weekly, name='mark_delivery_guy_paid_weekly'),
+    path('admin-panel/api/delivery-guys/<int:delivery_guy_id>/week-deliveries/', admin_views.get_delivery_guy_week_deliveries, name='get_delivery_guy_week_deliveries'),
     
     # Site Settings
 
